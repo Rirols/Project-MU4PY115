@@ -2,8 +2,8 @@
 
 import pickle
 
-energies = pickle.load(open('./zundel_100K_energy', 'rb'))
-pos = pickle.load(open('./zundel_100K_pos', 'rb'))
+energies = pickle.load(open('./data/zundel_100K_energy', 'rb'))
+pos = pickle.load(open('./data/zundel_100K_pos', 'rb'))
 
 print(energies)
 print(pos)
