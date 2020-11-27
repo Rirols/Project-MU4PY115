@@ -48,12 +48,15 @@ def compute_desc(molecs, dataset='zundel', soap_params=None, parallelize=True):
 	if soap_params != None:
 		params['soap'].update(soap_params)
 	
+	tot_time = np.shape(molecs)[0]
+
 	soap = SOAP(**params['soap'])
 	descriptors = soap.create(molecs,
-		positions=[np.arange(params['atoms']) for i in range(len(molecs))],
+		positions=[np.arange(params['atoms']) for i in range(tot_time)],
 		n_jobs=multiprocessing.cpu_count() if parallelize else 1)
 
-	return descriptors
+	return np.reshape(descriptors,
+		(tot_time, params['atoms'], np.shape(descriptors)[1]))
 
 
 def load_and_compute(dataset='zundel', limit=None, soap_params=None, parallelize=True):
