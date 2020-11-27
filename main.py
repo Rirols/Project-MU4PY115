@@ -31,7 +31,7 @@ import keras
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Flatten
 
-def create_sub_DNN(dropout_rate, descript):
+def create_sub_DNN(dropout_rate, descript, optimizer=keras.optimizers.Adam()):
     # instantiate model
     model = Sequential()
     # 2 hidden layers, 30 neurons each; 
@@ -40,39 +40,13 @@ def create_sub_DNN(dropout_rate, descript):
     # soft-max layer
     model.add(Dense(1, activation='softmax'))
     
+    model.compile(loss=keras.losses.categorical_crossentropy,
+                  optimizer=optimizer,
+                  metrics=['accuracy'])
+    
     return model
 
-#Create NN: input = descriptors, output = system's total energy
 
-#Step 1: process data
-
-#Import data
-
-#Take fraction of the data
-
-#Process data: positions => descriptors
-
-#Step 2: Define NN and architecture
-
-#from keras.models import Sequential
-#from keras.layers import Dense, Dropout, Flatten
-#from keras.layers import Conv2D, MaxPooling2D
-#
-#def create_DNN():
-#    # instantiate model
-#    model = Sequential()    
-#    return model
-#
-##Step 3: Optimizer and cost function
-#
-#def compile_model(optimizer=keras.optimizers.Adam()):
-#    # create the mode
-#    model=create_DNN()
-#    # compile the model
-#    model.compile(loss=keras.losses.categorical_crossentropy,
-#                  optimizer=optimizer,
-#                  metrics=['accuracy'])
-#    return model
 #
 ##Step 4: Train the model
 #    
