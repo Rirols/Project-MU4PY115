@@ -22,7 +22,7 @@ limit=10000
 
 # Load dataset and compute descriptors
 descriptors, energies = data.load_and_compute(
-	dataset = 'zundel', soap_params=soap_params, limit=limit, parallelize=True)
+	dataset='zundel', soap_params=soap_params, limit=limit, parallelize=True)
 
 print(np.shape(descriptors))
 print(np.shape(energies))

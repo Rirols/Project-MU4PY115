@@ -8,7 +8,7 @@ import numpy as np
 from ase import Atoms
 from dscribe.descriptors import SOAP
 
-data_path='./data'
+data_path='data'
 
 datasets = {
 	'zundel': {
