@@ -12,13 +12,14 @@ data_path='./data'
 
 datasets = {
 	'zundel': {
-		'atoms': [8, 8, 1, 1, 1, 1, 1],
+		'atoms': 7,
+		'symbols': 'O2H5',
 		'data': {
 			'pos': join(data_path, 'zundel_100K_pos'),
 			'energies': join(data_path, 'zundel_100K_energy')
 		},
 		'soap': {
-			'species': [1, 8],
+			'species': ['H', 'O'],
 			'periodic': False,
 		}
 	}
@@ -37,7 +38,7 @@ def load(dataset='zundel', limit=None):
 	tot_time = np.shape(pos)[0]
 	molecs = np.empty(tot_time, dtype=object)
 	for t in range(tot_time):
-		molecs[t] = Atoms(params['atoms'], positions=pos[t])
+		molecs[t] = Atoms(params['symbols'], positions=pos[t])
 
 	return molecs, energies
 
@@ -49,6 +50,7 @@ def compute_desc(molecs, dataset='zundel', soap_params=None, parallelize=True):
 	
 	soap = SOAP(**params['soap'])
 	descriptors = soap.create(molecs,
+		positions=[np.arange(params['atoms']) for i in range(len(molecs))],
 		n_jobs=multiprocessing.cpu_count() if parallelize else 1)
 
 	return descriptors
