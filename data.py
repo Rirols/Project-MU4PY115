@@ -19,10 +19,6 @@ datasets = {
 		'soap': {
 			'species': [1, 8],
 			'periodic': False,
-			'sigma': 0.01,
-			'nmax': 3,
-			'lmax': 2,
-			'rcut': 5
 		}
 	}
 }
@@ -34,7 +30,8 @@ def load(dataset='zundel', limit=None, soap_params=None):
 	params:
 		- dataset: the name of the dataset
 		- limit: reduce the size of the dataset
-		- soap_params: an object containing custom soap parameters (some are set by default)
+		- soap_params: an object containing custom soap parameters
+		  (species and periodic are already set)
 	"""
 
 	params = copy.deepcopy(datasets[dataset])
