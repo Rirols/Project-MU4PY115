@@ -24,18 +24,19 @@ limit=10000
 descriptors, energies = data.load_and_compute(
 	dataset='zundel', soap_params=soap_params, limit=limit, parallelize=True)
 
-print(np.shape(descriptors))
-print(np.shape(energies))
+
 
 import keras
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Flatten
 
-def create_sub_DNN(dropout_rate, descript, optimizer=keras.optimizers.Adam()):
+#Model for the SubNN
+
+def create_sub_DNN(input_shape=np.shape(descriptors)[2], optimizer=keras.optimizers.Adam()):
     # instantiate model
     model = Sequential()
     # 2 hidden layers, 30 neurons each; 
-    model.add(Dense(30,input_shape=(np.shape(descript)), activation='tanh'))
+    model.add(Dense(30,input_shape=(input_shape), activation='tanh'))
     model.add(Dense(30, activation='tanh'))
     # soft-max layer
     model.add(Dense(1, activation='softmax'))
@@ -46,24 +47,12 @@ def create_sub_DNN(dropout_rate, descript, optimizer=keras.optimizers.Adam()):
     
     return model
 
+Sub_NN_O = create_sub_DNN()
 
-#
-##Step 4: Train the model
-#    
-## training parameters
-#batch_size = 64
-#epochs = 10
-#
-## create the deep neural net
-#model_DNN=compile_model()
-#
-## train DNN and store training info in history
-#history=model_DNN.fit(descriptors_train, energies_train,
-#          batch_size=batch_size,
-#          epochs=epochs,
-#          verbose=1,
-#          validation_data=(descriptors_test, energies_test))
-#
-##Step 5: evaluate performance
-#
-##Step 6: Optimize
+Sub_NN_H = create_sub_DNN()
+
+A=[Sub_NN_O, Sub_NN_O, Sub_NN_H, Sub_NN_H, Sub_NN_H, Sub_NN_H, Sub_NN_H]
+
+
+
+#A.keras.layers.Add(Dense(1,input_shape=np.shape(A), activation='tanh'))
