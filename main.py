@@ -27,6 +27,21 @@ descriptors, energies = data.load_and_compute(
 print(np.shape(descriptors))
 print(np.shape(energies))
 
+import keras
+from keras.models import Sequential
+from keras.layers import Dense, Dropout, Flatten
+
+def create_sub_DNN(dropout_rate, descript):
+    # instantiate model
+    model = Sequential()
+    # 2 hidden layers, 30 neurons each; 
+    model.add(Dense(30,input_shape=(np.shape(descript)), activation='tanh'))
+    model.add(Dense(30, activation='tanh'))
+    # soft-max layer
+    model.add(Dense(1, activation='softmax'))
+    
+    return model
+
 #Create NN: input = descriptors, output = system's total energy
 
 #Step 1: process data
