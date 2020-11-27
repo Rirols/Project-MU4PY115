@@ -20,7 +20,7 @@ datasets = {
 		},
 		'soap': {
 			'species': ['H', 'O'],
-			'periodic': False,
+			'periodic': False
 		}
 	}
 }
@@ -69,6 +69,7 @@ def load_and_compute(dataset='zundel', limit=None, soap_params=None, parallelize
 		- soap_params: an object containing custom soap parameters
 		  (species and periodic are already set)
 	"""
+
 	molecs, energies = load(dataset=dataset, limit=limit)
 	descriptors = compute_desc(
 		molecs, dataset=dataset, soap_params=soap_params, parallelize=parallelize)
