@@ -18,9 +18,11 @@ soap_params = {
 	'rcut': 5
 }
 
+limit=10000
+
 # Load dataset and compute descriptors
-descriptors, energies = data.load(
-	dataset = 'zundel', soap_params=soap_params, limit=1000)
+descriptors, energies = data.load_and_compute(
+	dataset = 'zundel', soap_params=soap_params, limit=limit, parallelize=True)
 
 print(np.shape(descriptors))
 print(np.shape(energies))
