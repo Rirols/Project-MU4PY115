@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' # disable annoying warnings from tensorflow
+
 import data
 import NN
 import numpy as np
@@ -11,43 +14,36 @@ soap_params = {
 	'rcut': 5
 }
 
-limit=1000
+limit = 10000
+train_percent = 0.8
 
 # Load dataset and compute descriptors
 descriptors, energies = data.load_and_compute(
 	dataset='zundel', soap_params=soap_params, limit=limit)
 
-model = NN.create(n_types=2, atoms=[0,0,1,1,1,1,1], desc_length=np.shape(descriptors)[2])
-#model.build(input_shape=(84,))
-print(model.summary())
+train_size = int(train_percent * np.shape(descriptors)[0])
 
-#import keras
-#from keras.models import Sequential
-#from keras.layers import Dense, Dropout, Flatten
+X_train, y_train = descriptors[:train_size], energies[:train_size]
+X_test, y_test = descriptors[train_size:], energies[train_size:]
 
-##Model for the SubNN
-#
-#def create_sub_DNN(input_shape=np.shape(descriptors)[2], optimizer=keras.optimizers.Adam()):
-#    # instantiate model
-#    model = Sequential()
-#    # 2 hidden layers, 30 neurons each; 
-#    model.add(Dense(30,input_shape=(input_shape), activation='tanh'))
-#    model.add(Dense(30, activation='tanh'))
-#    # soft-max layer
-#    model.add(Dense(1, activation='softmax'))
-#    
-#    model.compile(loss=keras.losses.categorical_crossentropy,
-#                  optimizer=optimizer,
-#                  metrics=['accuracy'])
-#    
-#    return model
-#
-#Sub_NN_O = create_sub_DNN()
-#
-#Sub_NN_H = create_sub_DNN()
-#
-#A=[Sub_NN_O, Sub_NN_O, Sub_NN_H, Sub_NN_H, Sub_NN_H, Sub_NN_H, Sub_NN_H]
+def convert_to_inputs(raw):
+	raw_t = raw.transpose(1, 0, 2)
+	X = []
+	for i in range(np.shape(raw_t)[0]):
+		X.append(raw_t[i])
+	return X
 
+X_train = convert_to_inputs(X_train)
+X_test = convert_to_inputs(X_test)
 
+# Create model and train it
+model = NN.create(atoms=[0,0,1,1,1,1,1], desc_length=np.shape(descriptors)[2])
+#print(model.summary())
 
-#A.keras.layers.Add(Dense(1,input_shape=np.shape(A), activation='tanh'))
+model.fit(
+	X_train,
+	y_train,
+	batch_size=64,
+	epochs=2,
+	validation_data=(X_test, y_test)	
+)
