@@ -38,7 +38,6 @@ X_test = convert_to_inputs(X_test)
 
 # Create model and train it
 model = NN.create(atoms=[0,0,1,1,1,1,1], desc_length=np.shape(descriptors)[2])
-#print(model.summary())
 
 model.fit(
 	X_train,
@@ -47,3 +46,14 @@ model.fit(
 	epochs=2,
 	validation_data=(X_test, y_test)	
 )
+
+# Calculate and print scores
+score = model.evaluate(X_test, y_test, verbose=0)
+
+max_metrics_name_length = len(max(model.metrics_names, key=len))
+print('\n')
+print(' Scores '.center(max_metrics_name_length + 12, '='))
+line = '{:<%i} : {:.3e}' % max_metrics_name_length
+for i in range(len(model.metrics_names)):
+	print(line.format(model.metrics_names[i], score[i]))
+
