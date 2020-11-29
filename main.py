@@ -6,22 +6,45 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' # disable annoying warnings from tensor
 import data
 import NN
 import numpy as np
+from keras import losses, optimizers
 
-soap_params = {
-	'sigma': 0.01,
-	'nmax': 3, 
-	'lmax': 3,
-	'rcut': 5
+params = {
+	'dataset': 'zundel',
+	'dataset_size_limit': 10000,
+	'soap': {
+		'sigma': 0.01,
+		'nmax': 3, 
+		'lmax': 3,
+		'rcut': 5
+	},
+	'train_set_size_ratio': 0.8,
+	'submodel': {
+		'activation': 'tanh',
+		'hidden_neurons': 30,
+		'compilation': {
+			'optimizer': optimizers.Adam(),
+			'loss': losses.categorical_crossentropy,
+			'metrics': ['accuracy']
+		}
+	},
+	'model': {
+		'compilation': {
+			'optimizer': optimizers.Adam(),
+			'loss': losses.categorical_crossentropy,
+			'metrics': ['accuracy']
+		}
+	},
+	'fit': {
+		'batch_size': 64,
+		'epochs': 2
+	}
 }
-
-limit = 10000
-train_percent = 0.8
 
 # Load dataset and compute descriptors
 descriptors, energies = data.load_and_compute(
-	dataset='zundel', soap_params=soap_params, limit=limit)
+	dataset=params['dataset'], soap_params=params['soap'], limit=params['dataset_size_limit'])
 
-train_size = int(train_percent * np.shape(descriptors)[0])
+train_size = int(params['train_set_size_ratio'] * np.shape(descriptors)[0])
 
 X_train, y_train = descriptors[:train_size], energies[:train_size]
 X_test, y_test = descriptors[train_size:], energies[train_size:]
@@ -37,23 +60,29 @@ X_train = convert_to_inputs(X_train)
 X_test = convert_to_inputs(X_test)
 
 # Create model and train it
-model = NN.create(atoms=[0,0,1,1,1,1,1], desc_length=np.shape(descriptors)[2])
+model = NN.create(
+	atoms=[0,0,1,1,1,1,1],
+	desc_length=np.shape(descriptors)[2],
+	comp_params=params['model']['compilation'],
+	sub_comp_params=params['submodel']['compilation'],
+	neurons=params['submodel']['hidden_neurons'],
+	activation=params['submodel']['activation']
+)
 
 model.fit(
 	X_train,
 	y_train,
-	batch_size=64,
-	epochs=2,
-	validation_data=(X_test, y_test)	
+	validation_data=(X_test, y_test),
+	**params['fit']
 )
 
 # Calculate and print scores
-score = model.evaluate(X_test, y_test, verbose=0)
+scores = model.evaluate(X_test, y_test, verbose=0)
 
 max_metrics_name_length = len(max(model.metrics_names, key=len))
 print('\n')
 print(' Scores '.center(max_metrics_name_length + 12, '='))
 line = '{:<%i} : {:.3e}' % max_metrics_name_length
 for i in range(len(model.metrics_names)):
-	print(line.format(model.metrics_names[i], score[i]))
+	print(line.format(model.metrics_names[i], scores[i]))
 
