@@ -19,8 +19,13 @@ params = {
 	},
 	'train_set_size_ratio': 0.8,
 	'submodel': {
-		'activation': 'tanh',
 		'hidden_neurons': 30,
+		'hidden_layers': {
+			'activation': 'tanh'
+		},
+		'output_layer': {
+			'activation': 'tanh'
+		},
 		'compilation': {
 			'optimizer': optimizers.Adam(),
 			'loss': losses.categorical_crossentropy,
@@ -64,9 +69,10 @@ model = NN.create(
 	atoms=[0,0,1,1,1,1,1],
 	desc_length=np.shape(descriptors)[2],
 	comp_params=params['model']['compilation'],
-	sub_comp_params=params['submodel']['compilation'],
 	neurons=params['submodel']['hidden_neurons'],
-	activation=params['submodel']['activation']
+	sub_hidden_layers_params=params['submodel']['hidden_layers'],
+	sub_output_layer_params=params['submodel']['output_layer'],
+	sub_comp_params=params['submodel']['compilation']
 )
 
 model.fit(
