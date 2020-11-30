@@ -19,29 +19,77 @@ params = {
 	},
 	'train_set_size_ratio': 0.8,
 	'submodel': {
-		'hidden_neurons': 30,
 		'hidden_layers': {
-			'activation': 'tanh'
+			'units': 30,
+			'activation': 'tanh',
+			'use_bias': True,
+			'kernel_initializer': 'glorot_uniform',
+			'kernel_regularizer': None,
+			'bias_regularizer': None,
+			'activity_regularizer': None,
+			'kernel_constraint': None,
+			'bias_constraint': None
 		},
 		'output_layer': {
-			'activation': 'tanh'
+			'activation': 'tanh',
+			'use_bias': True,
+			'kernel_initializer': 'glorot_uniform',
+			'kernel_regularizer': None,
+			'bias_regularizer': None,
+			'activity_regularizer': None,
+			'kernel_constraint': None,
+			'bias_constraint': None
 		},
 		'compilation': {
-			'optimizer': optimizers.Adam(),
-			'loss': losses.categorical_crossentropy,
-			'metrics': ['accuracy']
+			'optimizer': optimizers.Adam(
+				learning_rate=0.001,
+				beta_1=0.9,
+				beta_2=0.999,
+				epsilon=1e-07,
+				amsgrad=False
+			),
+			'loss': losses.CategoricalCrossentropy(
+				from_logits=False,
+				label_smoothing=0,
+				reduction='auto'
+			),
+			'metrics': ['accuracy'],
+			'loss_weights': None,
+			'sample_weight_mode': None,
+			'weighted_metrics': None,
+			'target_tensors': None
 		}
 	},
 	'model': {
 		'compilation': {
-			'optimizer': optimizers.Adam(),
-			'loss': losses.categorical_crossentropy,
-			'metrics': ['accuracy']
+			'optimizer': optimizers.Adam(
+				learning_rate=0.001,
+				beta_1=0.9,
+				beta_2=0.999,
+				epsilon=1e-07,
+				amsgrad=False
+			),
+			'loss': losses.CategoricalCrossentropy(
+				from_logits=False,
+				label_smoothing=0,
+				reduction='auto'
+			),
+			'metrics': ['accuracy'],
+			'loss_weights': None,
+			'sample_weight_mode': None,
+			'weighted_metrics': None,
+			'target_tensors': None
 		}
 	},
 	'fit': {
 		'batch_size': 64,
-		'epochs': 2
+		'epochs': 2,
+		'shuffle': True,
+		'class_weight': None,
+		'sample_weight': None,
+		'initial_epoch': 0,
+		'steps_per_epoch': None,
+		'validation_steps': None
 	}
 }
 
@@ -69,7 +117,6 @@ model = NN.create(
 	atoms=[0,0,1,1,1,1,1],
 	desc_length=np.shape(descriptors)[2],
 	comp_params=params['model']['compilation'],
-	neurons=params['submodel']['hidden_neurons'],
 	sub_hidden_layers_params=params['submodel']['hidden_layers'],
 	sub_output_layer_params=params['submodel']['output_layer'],
 	sub_comp_params=params['submodel']['compilation']
