@@ -2,11 +2,11 @@
 
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' # disable annoying warnings from tensorflow
-
+import matplotlib.pyplot as plt
 import data
 import NN
 import numpy as np
-from keras import losses, optimizers
+from keras import losses, optimizers, metrics
 
 params = {
 	'dataset': 'zundel',
@@ -31,7 +31,7 @@ params = {
 			'bias_constraint': None
 		},
 		'output_layer': {
-			'activation': 'tanh',
+			'activation': 'linear',
 			'use_bias': True,
 			'kernel_initializer': 'glorot_uniform',
 			'kernel_regularizer': None,
@@ -48,11 +48,7 @@ params = {
 				epsilon=1e-07,
 				amsgrad=False
 			),
-			'loss': losses.CategoricalCrossentropy(
-				from_logits=False,
-				label_smoothing=0,
-				reduction='auto'
-			),
+			'loss': losses.MeanSquaredError,
 			'metrics': ['accuracy'],
 			'loss_weights': None,
 			'sample_weight_mode': None,
@@ -69,12 +65,8 @@ params = {
 				epsilon=1e-07,
 				amsgrad=False
 			),
-			'loss': losses.CategoricalCrossentropy(
-				from_logits=False,
-				label_smoothing=0,
-				reduction='auto'
-			),
-			'metrics': ['accuracy'],
+			'loss': losses.MeanSquaredError(),
+			'metrics': metrics.MeanSquaredError(),
 			'loss_weights': None,
 			'sample_weight_mode': None,
 			'weighted_metrics': None,
@@ -83,7 +75,7 @@ params = {
 	},
 	'fit': {
 		'batch_size': 64,
-		'epochs': 2,
+		'epochs': 20,
 		'shuffle': True,
 		'class_weight': None,
 		'sample_weight': None,
@@ -122,7 +114,7 @@ model = NN.create(
 	sub_comp_params=params['submodel']['compilation']
 )
 
-model.fit(
+history=model.fit(
 	X_train,
 	y_train,
 	validation_data=(X_test, y_test),
@@ -131,11 +123,29 @@ model.fit(
 
 # Calculate and print scores
 scores = model.evaluate(X_test, y_test, verbose=0)
+print()
+print('Test loss:', scores[0])
+print('MSE:', scores[1])
 
+y_pred=model.predict(X_test)
+plt.plot(y_test, y_pred[2], '.')
+plt.xlabel('True value of energy')
+plt.ylabel('Predicted value')
+plt.legend()
+plt.show()
+
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.ylabel('model loss')
+plt.xlabel('epoch')
+plt.legend(['train', 'test'], loc='best')
+plt.show()
+
+"""
 max_metrics_name_length = len(max(model.metrics_names, key=len))
 print('\n')
 print(' Scores '.center(max_metrics_name_length + 12, '='))
 line = '{:<%i} : {:.3e}' % max_metrics_name_length
 for i in range(len(model.metrics_names)):
 	print(line.format(model.metrics_names[i], scores[i]))
-
+"""

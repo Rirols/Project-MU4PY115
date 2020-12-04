@@ -10,7 +10,7 @@ def create_submodel(comp_params, hidden_layers_params, output_layer_params):
 	model.add(Dense(**hidden_layers_params))
 	model.add(Dense(**hidden_layers_params))
 	model.add(Dense(1, **output_layer_params))
-	model.compile(**comp_params)
+	#model.compile(**comp_params)
 
 	return model
 
