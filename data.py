@@ -57,7 +57,7 @@ def compute_desc(molecs, dataset='zundel', soap_params=None, parallelize=True):
     descriptors = soap.create(molecs,
         positions=[np.arange(params['atoms']) for i in range(tot_time)],
         n_jobs=multiprocessing.cpu_count() if parallelize else 1)
-
+    descriptors=scale(descriptors)
     return np.reshape(descriptors,
         (tot_time, params['atoms'], np.shape(descriptors)[1]))
 
@@ -76,5 +76,4 @@ def load_and_compute(dataset='zundel', limit=None, soap_params=None, parallelize
     molecs, energies = load(dataset=dataset, limit=limit)
     descriptors = compute_desc(
         molecs, dataset=dataset, soap_params=soap_params, parallelize=parallelize)
-    
     return descriptors, energies

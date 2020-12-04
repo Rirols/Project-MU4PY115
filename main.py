@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import data
 import NN
 import numpy as np
-from keras import losses, optimizers, metrics
+from keras import losses, optimizers, metrics, callbacks
 
 params = {
 	'dataset': 'zundel',
@@ -24,7 +24,7 @@ params = {
 			'activation': 'tanh',
 			'use_bias': True,
 			'kernel_initializer': 'glorot_uniform',
-			'kernel_regularizer': None,
+			'kernel_regularizer': 'l1',
 			'bias_regularizer': None,
 			'activity_regularizer': None,
 			'kernel_constraint': None,
@@ -74,8 +74,9 @@ params = {
 		}
 	},
 	'fit': {
-		'batch_size': 64,
-		'epochs': 20,
+		'batch_size': 32,
+        'callbacks' : callbacks.EarlyStopping(monitor='loss', patience=3),
+		'epochs': 100,
 		'shuffle': True,
 		'class_weight': None,
 		'sample_weight': None,
@@ -105,6 +106,7 @@ X_train = convert_to_inputs(X_train)
 X_test = convert_to_inputs(X_test)
 
 # Create model and train it
+
 model = NN.create(
 	atoms=[0,0,1,1,1,1,1],
 	desc_length=np.shape(descriptors)[2],
@@ -121,17 +123,20 @@ history=model.fit(
 	**params['fit']
 )
 
+
 # Calculate and print scores
 scores = model.evaluate(X_test, y_test, verbose=0)
 print()
 print('Test loss:', scores[0])
 print('MSE:', scores[1])
+print('Number of epochs run:', len(history.history['loss']))
 
 y_pred=model.predict(X_test)
-plt.plot(y_test, y_pred[2], '.')
+
+plt.plot(y_test, y_pred[-1], '.')
+plt.plot(y_test, y_test)
 plt.xlabel('True value of energy')
 plt.ylabel('Predicted value')
-plt.legend()
 plt.show()
 
 plt.plot(history.history['loss'])
