@@ -21,7 +21,7 @@ Python packages installation :
 (md_env) $ pip install numpy matplotlib tensorflow keras ase dscribe
 ```
 
-## Usage
+## Usage
 
 Simply run the `main.py`script :
 
