@@ -2,10 +2,12 @@
 
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' # disable annoying warnings from tensorflow
-import matplotlib.pyplot as plt
+
 import data
 import NN
 import numpy as np
+import matplotlib.pyplot as plt
+
 from keras import losses, optimizers, metrics, callbacks
 
 params = {
@@ -40,49 +42,20 @@ params = {
 			'kernel_constraint': None,
 			'bias_constraint': None
 		},
-		'compilation': {
-			'optimizer': optimizers.Adam(
-				learning_rate=0.001,
-				beta_1=0.9,
-				beta_2=0.999,
-				epsilon=1e-07,
-				amsgrad=False
-			),
-			'loss': losses.MeanSquaredError,
-			'metrics': ['accuracy'],
-			'loss_weights': None,
-			'sample_weight_mode': None,
-			'weighted_metrics': None,
-			'target_tensors': None
-		}
 	},
 	'model': {
 		'compilation': {
 			'optimizer': optimizers.Adam(
-				learning_rate=0.001,
-				beta_1=0.9,
-				beta_2=0.999,
-				epsilon=1e-07,
-				amsgrad=False
+				learning_rate=0.001
 			),
 			'loss': losses.MeanSquaredError(),
 			'metrics': metrics.MeanSquaredError(),
-			'loss_weights': None,
-			'sample_weight_mode': None,
-			'weighted_metrics': None,
-			'target_tensors': None
 		}
 	},
 	'fit': {
 		'batch_size': 32,
         'callbacks' : callbacks.EarlyStopping(monitor='loss', patience=3),
-		'epochs': 100,
-		'shuffle': True,
-		'class_weight': None,
-		'sample_weight': None,
-		'initial_epoch': 0,
-		'steps_per_epoch': None,
-		'validation_steps': None
+		'epochs': 100
 	}
 }
 
@@ -106,23 +79,21 @@ X_train = convert_to_inputs(X_train)
 X_test = convert_to_inputs(X_test)
 
 # Create model and train it
-
 model = NN.create(
 	atoms=[0,0,1,1,1,1,1],
 	desc_length=np.shape(descriptors)[2],
 	comp_params=params['model']['compilation'],
 	sub_hidden_layers_params=params['submodel']['hidden_layers'],
-	sub_output_layer_params=params['submodel']['output_layer'],
-	sub_comp_params=params['submodel']['compilation']
+	sub_output_layer_params=params['submodel']['output_layer']
 )
 
-history=model.fit(
+history = model.fit(
 	X_train,
 	y_train,
 	validation_data=(X_test, y_test),
+	verbose=0,
 	**params['fit']
 )
-
 
 # Calculate and print scores
 scores = model.evaluate(X_test, y_test, verbose=0)
@@ -131,7 +102,7 @@ print('Test loss:', scores[0])
 print('MSE:', scores[1])
 print('Number of epochs run:', len(history.history['loss']))
 
-y_pred=model.predict(X_test)
+y_pred = model.predict(X_test)
 
 plt.plot(y_test, y_pred[-1], '.')
 plt.plot(y_test, y_test)
