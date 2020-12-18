@@ -16,7 +16,8 @@ datasets = {
         'symbols': 'O2H5',
         'data': {
             'pos': join(data_path, 'zundel_100K_pos'),
-            'energies': join(data_path, 'zundel_100K_energy')
+            'energies': join(data_path, 'zundel_100K_energy'),
+            'thinning_step': 100
         },
         'soap': {
             'species': ['H', 'O'],
@@ -31,7 +32,8 @@ def load(dataset='zundel', limit=None):
     
     pos = pickle.load(open(params['data']['pos'], 'rb'))
     energies = pickle.load(open(params['data']['energies'], 'rb'))
-    pos, energies = pos[::100], energies[::100]
+    step = params['data']['thinning_step']
+    pos, energies = pos[::step], energies[::step]
 
     if limit != None:
         pos, energies = pos[:limit], energies[:limit]
