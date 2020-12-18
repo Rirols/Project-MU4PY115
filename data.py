@@ -7,7 +7,6 @@ import pickle
 import numpy as np
 from ase import Atoms
 from dscribe.descriptors import SOAP
-from sklearn.preprocessing import scale
 
 data_path='data'
 
@@ -33,7 +32,6 @@ def load(dataset='zundel', limit=None):
     pos = pickle.load(open(params['data']['pos'], 'rb'))
     energies = pickle.load(open(params['data']['energies'], 'rb'))
     pos, energies = pos[::100], energies[::100]
-    energies = scale(energies)
 
     if limit != None:
         pos, energies = pos[:limit], energies[:limit]
@@ -58,7 +56,6 @@ def compute_desc(molecs, dataset='zundel', soap_params=None, parallelize=True):
         positions=[np.arange(params['atoms']) for i in range(tot_time)],
         n_jobs=multiprocessing.cpu_count() if parallelize else 1)
 
-    descriptors = scale(descriptors)
     return np.reshape(descriptors,
         (tot_time, params['atoms'], np.shape(descriptors)[1]))
 

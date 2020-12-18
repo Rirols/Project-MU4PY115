@@ -7,19 +7,20 @@ import data
 import NN
 import numpy as np
 import matplotlib.pyplot as plt
-
 from keras import losses, optimizers, metrics, callbacks
+from sklearn.preprocessing import scale
 
 params = {
 	'dataset': 'zundel',
-	'dataset_size_limit': 10000,
+	'dataset_size_limit': 100000,
 	'soap': {
 		'sigma': 0.01,
 		'nmax': 3, 
 		'lmax': 3,
 		'rcut': 5
 	},
-	'train_set_size_ratio': 0.8,
+	'train_set_size_ratio': 0.6,
+	'validation_set_size_ratio': 0.2,
 	'submodel': {
 		'hidden_layers': {
 			'units': 30,
@@ -60,13 +61,12 @@ params = {
 }
 
 # Load dataset and compute descriptors
+print('Computing descriptors...')
 descriptors, energies = data.load_and_compute(
 	dataset=params['dataset'], soap_params=params['soap'], limit=params['dataset_size_limit'])
 
 train_size = int(params['train_set_size_ratio'] * np.shape(descriptors)[0])
-
-X_train, y_train = descriptors[:train_size], energies[:train_size]
-X_test, y_test = descriptors[train_size:], energies[train_size:]
+validation_size = int(params['validation_set_size_ratio'] * np.shape(descriptors)[0])
 
 def convert_to_inputs(raw):
 	raw_t = raw.transpose(1, 0, 2)
@@ -75,10 +75,22 @@ def convert_to_inputs(raw):
 		X.append(raw_t[i])
 	return X
 
-X_train = convert_to_inputs(X_train)
-X_test = convert_to_inputs(X_test)
+def create_set(X, y, indexes):
+	X_data, y_data = X[indexes[0]:indexes[1]], y[indexes[0]:indexes[1]]
+	X_data = convert_to_inputs(X_data)
+	for i in range(len(X_data)):
+		X_data[i] = scale(X_data[i])
+	y_data = scale(y_data)
+	return X_data, y_data
+
+print('Generating train, validation and test sets...')
+X_train, y_train = create_set(descriptors, energies, (0, train_size))
+X_validation, y_validation = create_set(
+	descriptors, energies, (train_size, train_size + validation_size))
+X_test, y_test = create_set(descriptors, energies, (train_size + validation_size, -1))
 
 # Create model and train it
+print('Creating neural network...')
 model = NN.create(
 	atoms=[0,0,1,1,1,1,1],
 	desc_length=np.shape(descriptors)[2],
@@ -87,10 +99,11 @@ model = NN.create(
 	sub_output_layer_params=params['submodel']['output_layer']
 )
 
+print('Training network (this might take a while)...')
 history = model.fit(
 	X_train,
 	y_train,
-	validation_data=(X_test, y_test),
+	validation_data=(X_validation, y_validation),
 	verbose=0,
 	**params['fit']
 )
