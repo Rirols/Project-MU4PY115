@@ -27,7 +27,7 @@ params = {
             'activation': 'tanh',
             'use_bias': True,
             'kernel_initializer': None,
-            'kernel_regularizer': None,
+            'kernel_regularizer': 'l1',
             'bias_regularizer': None,
             'activity_regularizer': None,
             'kernel_constraint': None,
