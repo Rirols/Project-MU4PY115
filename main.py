@@ -14,10 +14,10 @@ params = {
     'dataset': 'zundel',
     'dataset_size_limit': 100000,
     'soap': {
-        'sigma': 0.01,
-        'nmax': 3, 
-        'lmax': 3,
-        'rcut': 5
+        'sigma': 1, #initial: 0.01
+        'nmax': 2, #3
+        'lmax': 5, #3
+        'rcut': 7 #7
     },
     'train_set_size_ratio': 0.6,
     'validation_set_size_ratio': 0.2,
@@ -26,8 +26,8 @@ params = {
             'units': 30,
             'activation': 'tanh',
             'use_bias': True,
-            'kernel_initializer': None,
-            'kernel_regularizer': 'l1',
+            'kernel_initializer': 'GlorotUniform',
+            'kernel_regularizer': None,
             'bias_regularizer': None,
             'activity_regularizer': None,
             'kernel_constraint': None,
@@ -36,9 +36,9 @@ params = {
         'output_layer': {
             'activation': 'linear',
             'use_bias': True,
-            'kernel_initializer': 'glorot_uniform',
+            'kernel_initializer': 'GlorotUniform',
             'kernel_regularizer': None,
-            'bias_regularizer': None,
+            'bias_regularizer': 'l1',
             'activity_regularizer': None,
             'kernel_constraint': None,
             'bias_constraint': None
@@ -55,7 +55,9 @@ params = {
     },
     'fit': {
         'batch_size': 32,
-        'callbacks' : callbacks.EarlyStopping(monitor='loss', patience=3),
+        'callbacks' : [callbacks.EarlyStopping(monitor='loss', patience=3), 
+                       callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1,
+                                                   patience=3),],
         'epochs': 100
     }
 }

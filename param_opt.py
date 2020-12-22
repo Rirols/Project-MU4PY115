@@ -13,7 +13,18 @@ from sklearn.preprocessing import scale
 
 from hyperopt import hp, fmin, tpe, STATUS_OK, Trials
 
-space={'learning_rate': hp.choice('learning_rate', [0.00001, 0.0001, 0.001, 0.1])}
+space={'kernel_regularizer': hp.choice('kernel_regularizer', [None, 'l1', 'l2', 'l1_l2']),
+       'bias_regularizer': hp.choice('bias_regularizer', [None, 'l1', 'l2', 'l1_l2']),
+       'activity_regularizer': hp.choice('activity_regularizer', [None,'l1', 'l2', 'l1_l2']),
+       'hidden_kernel_initializer': hp.choice('hidden_kernel_initializer', 
+                [None, 'RandomNormal', 'RandomUniform', 'TruncatedNormal', 'Zeros',
+                 'Ones', 'GlorotNormal', 'GlorotUniform', 'Identity', 'Orthogonal',
+                 'Constant', 'VarianceScaling']),
+       'output_kernel_initializer': hp.choice('output_kernel_initializer', 
+                [None, 'RandomNormal', 'RandomUniform', 'TruncatedNormal', 'Zeros',
+                 'Ones', 'GlorotNormal', 'GlorotUniform', 'Identity', 'Orthogonal',
+                 'Constant', 'VarianceScaling'])
+       }
 
 def convert_to_inputs(raw):
     raw_t = raw.transpose(1, 0, 2)
@@ -36,10 +47,10 @@ def objective(target):
         'dataset': 'zundel',
         'dataset_size_limit': 100000,
         'soap': {
-            'sigma': 0.01,
-            'nmax': 3, 
-            'lmax': 3,
-            'rcut': 5
+            'sigma': 1, #initial: 0.01
+            'nmax': 2, #3
+            'lmax': 5, #3
+            'rcut': 7 #7
             },
         'train_set_size_ratio': 0.6,
         'validation_set_size_ratio': 0.2,
@@ -48,19 +59,19 @@ def objective(target):
                 'units': 30,
                 'activation': 'tanh',
                 'use_bias': True,
-                'kernel_initializer': None,
-                'kernel_regularizer': 'l1',
+                'kernel_initializer': 'GlorotUniform',
+                'kernel_regularizer': None,
                 'bias_regularizer': None,
-                'activity_regularizer': None,
+                'activity_regularizer':None,
                 'kernel_constraint': None,
                 'bias_constraint': None
                 },
             'output_layer': {
                 'activation': 'linear',
                 'use_bias': True,
-                'kernel_initializer': 'glorot_uniform',
+                'kernel_initializer': 'GlorotUniform',
                 'kernel_regularizer': None,
-                'bias_regularizer': None,
+                'bias_regularizer': 'l1',
                 'activity_regularizer': None,
                 'kernel_constraint': None,
                 'bias_constraint': None
@@ -69,7 +80,7 @@ def objective(target):
         'model': {
             'compilation': {
                 'optimizer': optimizers.Adam(
-                    learning_rate=target['learning_rate']
+                    learning_rate=0.01
                     ),
                 'loss': losses.MeanSquaredError(),
                 'metrics': metrics.MeanSquaredError(),
@@ -77,10 +88,12 @@ def objective(target):
             },
         'fit': {
             'batch_size': 32,
-            'callbacks' : callbacks.EarlyStopping(monitor='loss', patience=3),
+            'callbacks' : [callbacks.EarlyStopping(monitor='loss', patience=3), 
+                       callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1,
+                                                   patience=3),],
             'epochs': 100
             }
-}   
+}
 
 # Load dataset and compute descriptors
     descriptors, energies = data.load_and_compute(
@@ -123,5 +136,5 @@ best = fmin(objective,
             max_evals=100
             )
 
-print (best)
+print ("Best result:", best)
 print (trials.best_trial)
