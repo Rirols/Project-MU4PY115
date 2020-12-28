@@ -2,13 +2,15 @@
 
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' # disable annoying warnings from tensorflow
-
+import warnings
+warnings.filterwarnings("ignore", message="Numerical issues were encountered ")
 import data
 import NN
 import numpy as np
 import matplotlib.pyplot as plt
 from keras import losses, optimizers, metrics, callbacks
 from sklearn.preprocessing import scale
+import monte_carlo
 
 params = {
     'dataset': 'zundel',
@@ -140,3 +142,7 @@ line = '{:<%i} : {:.3e}' % max_metrics_name_length
 for i in range(len(model.metrics_names)):
     print(line.format(model.metrics_names[i], scores[i]))
 """
+
+monte_carlo.MC_loop(delta=2, number=7, model=model, dataset=params['dataset'], 
+                    limit=params['dataset_size_limit'], loop_size=10)
+
