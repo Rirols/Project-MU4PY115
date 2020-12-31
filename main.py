@@ -10,6 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from keras import losses, optimizers, metrics, callbacks
 from sklearn.preprocessing import scale
+from sklearn.decomposition import PCA
 import monte_carlo
 
 params = {
@@ -82,7 +83,11 @@ def convert_to_inputs(raw):
 def create_set(X, y, indexes):
     X_data, y_data = X[indexes[0]:indexes[1]], y[indexes[0]:indexes[1]]
     X_data = convert_to_inputs(X_data)
+    pca = PCA(0.99)
     for i in range(len(X_data)):
+        pca = PCA(0.99)
+        print(pca.n_components_)
+        pca.transform(X_data[i])
         X_data[i] = scale(X_data[i])
     y_data = scale(y_data)
     return X_data, y_data
@@ -143,6 +148,6 @@ for i in range(len(model.metrics_names)):
     print(line.format(model.metrics_names[i], scores[i]))
 """
 
-monte_carlo.MC_loop(delta=2, number=7, model=model, dataset=params['dataset'], 
-                    limit=params['dataset_size_limit'], loop_size=10)
+#monte_carlo.MC_loop(delta=2, number=7, model=model, dataset=params['dataset'], 
+                    #limit=params['dataset_size_limit'], loop_size=10)
 
