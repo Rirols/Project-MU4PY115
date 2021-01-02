@@ -55,7 +55,7 @@ def scale_sets(atoms, sets, scaler):
 
 
 def generate_scaled_sets(
-    atoms, desc, energies, ratios, desc_scaler, energies_scaler):
+    atoms, desc, energies, ratios, pca_params, desc_scaler, energies_scaler):
     train_size = int(ratios[0] * np.shape(desc)[0])
     validation_size = int(ratios[1] * np.shape(desc)[0])
     cumul_size = train_size + validation_size
@@ -63,6 +63,10 @@ def generate_scaled_sets(
     X_train, y_train = desc[:train_size], energies[:train_size]
     X_validation, y_validation = desc[train_size:cumul_size], energies[train_size:cumul_size]
     X_test, y_test = desc[cumul_size:], energies[cumul_size:]
+
+    X_train = pca(atoms, X_train, pca_params)
+    X_validation = pca(atoms, X_validation, pca_params)
+    X_test = pca(atoms, X_test, pca_params)
 
     X_train, X_validation, X_test = scale_sets(
         atoms, [X_train, X_validation, X_test], desc_scaler) 

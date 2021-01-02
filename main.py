@@ -11,7 +11,7 @@ import NN
 import numpy as np
 import matplotlib.pyplot as plt
 from keras import losses, optimizers, metrics, callbacks
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 #import monte_carlo
 
 params = {
@@ -82,12 +82,12 @@ print('Computing descriptors...')
 descriptors, energies = data.load_and_compute(
     dataset=params['dataset'], soap_params=params['soap'], limit=params['dataset_size_limit'])
 
-print('Applying PCA...')
-descriptors = preprocessing.pca(
-    atoms=params['atoms'],
-    descriptors=descriptors,
-    params=params['pca']
-)
+#print('Applying PCA...')
+#descriptors = preprocessing.pca(
+#    atoms=params['atoms'],
+#    descriptors=descriptors,
+#    params=params['pca']
+#)
 
 train_size = int(params['train_set_size_ratio'] * np.shape(descriptors)[0])
 validation_size = int(params['validation_set_size_ratio'] * np.shape(descriptors)[0])
@@ -98,6 +98,7 @@ X_train, y_train, X_validation, y_validation, X_test, y_test = preprocessing.gen
         desc=descriptors,
         energies=energies,
         ratios=(params['train_set_size_ratio'], params['validation_set_size_ratio']),
+        pca_params=params['pca'],
         desc_scaler=params['scalers']['desc_scaler'],
         energies_scaler=params['scalers']['energies_scaler'])
 
@@ -116,7 +117,7 @@ X_test = convert_to_inputs(X_test)
 print('Creating neural network...')
 model = NN.create(
     atoms=params['atoms'],
-    desc_length=np.shape(descriptors)[2],
+    desc_length=np.shape(X_train[0])[1],
     comp_params=params['model']['compilation'],
     sub_hidden_layers_params=params['submodel']['hidden_layers'],
     sub_output_layer_params=params['submodel']['output_layer']
@@ -138,20 +139,22 @@ print('Test loss:', scores[0])
 print('MSE:', scores[1])
 print('Number of epochs run:', len(history.history['loss']))
 
-y_pred = model.predict(X_test)
+y_train_pred = model.predict(X_train)
+y_test_pred = model.predict(X_test)
 
-plt.plot(y_test, y_pred[-1], '.')
+plt.plot(y_test, y_test_pred[-1], '.')
+plt.plot(y_train, y_train_pred[-1], '.')
 plt.plot(y_test, y_test)
 plt.xlabel('True value of energy')
 plt.ylabel('Predicted value')
 plt.show()
 
-plt.plot(history.history['loss'])
-plt.plot(history.history['val_loss'])
-plt.ylabel('model loss')
-plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='best')
-plt.show()
+#plt.plot(history.history['loss'])
+#plt.plot(history.history['val_loss'])
+#plt.ylabel('model loss')
+#plt.xlabel('epoch')
+#plt.legend(['train', 'test'], loc='best')
+#plt.show()
 
 """
 max_metrics_name_length = len(max(model.metrics_names, key=len))
