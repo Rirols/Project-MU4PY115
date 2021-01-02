@@ -18,7 +18,7 @@ Python packages installation :
 
 ```
 (md_env) $ pip install --upgrade pip setuptools wheel
-(md_env) $ pip install numpy matplotlib tensorflow keras ase dscribe
+(md_env) $ pip install numpy matplotlib tensorflow scikit-learn keras ase dscribe
 ```
 
 ## Usage

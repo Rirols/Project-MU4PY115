@@ -4,23 +4,30 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' # disable annoying warnings from tensorflow
 import warnings
 warnings.filterwarnings("ignore", message="Numerical issues were encountered ")
+
 import data
+import preprocessing
 import NN
 import numpy as np
 import matplotlib.pyplot as plt
 from keras import losses, optimizers, metrics, callbacks
 from sklearn.preprocessing import scale
-from sklearn.decomposition import PCA
 import monte_carlo
 
 params = {
     'dataset': 'zundel',
     'dataset_size_limit': 100000,
+    'atoms': np.array([0,0,1,1,1,1,1]),
     'soap': {
         'sigma': 1, #initial: 0.01
-        'nmax': 2, #3
-        'lmax': 5, #3
-        'rcut': 7 #7
+        'nmax': 2,  #3
+        'lmax': 5,  #3
+        'rcut': 7   #7
+    },
+    # https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html
+    'pca': {
+        'n_components': None,
+        'svd_solver': 'auto'
     },
     'train_set_size_ratio': 0.6,
     'validation_set_size_ratio': 0.2,
@@ -58,9 +65,10 @@ params = {
     },
     'fit': {
         'batch_size': 32,
-        'callbacks' : [callbacks.EarlyStopping(monitor='loss', patience=3), 
-                       callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1,
-                                                   patience=3),],
+        'callbacks' : [
+            callbacks.EarlyStopping(monitor='loss', patience=3), 
+            callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=3)
+        ],
         'epochs': 100
     }
 }
@@ -69,6 +77,21 @@ params = {
 print('Computing descriptors...')
 descriptors, energies = data.load_and_compute(
     dataset=params['dataset'], soap_params=params['soap'], limit=params['dataset_size_limit'])
+
+print('Applying PCA...')
+descriptors = preprocessing.pca(
+    atoms=params['atoms'],
+    descriptors=descriptors,
+    params=params['pca']
+)
+
+#descriptors = preprocessing.scale(
+#    atoms=params['atoms'],
+#    descriptors=descriptors
+#)
+
+#import sys
+#sys.exit(0)
 
 train_size = int(params['train_set_size_ratio'] * np.shape(descriptors)[0])
 validation_size = int(params['validation_set_size_ratio'] * np.shape(descriptors)[0])
@@ -82,13 +105,8 @@ def convert_to_inputs(raw):
 
 def create_set(X, y, indexes):
     X_data, y_data = X[indexes[0]:indexes[1]], y[indexes[0]:indexes[1]]
+    X_data = preprocessing.scale(params['atoms'], X_data)
     X_data = convert_to_inputs(X_data)
-    pca = PCA(0.99)
-    for i in range(len(X_data)):
-        pca = PCA(0.99)
-        print(pca.n_components_)
-        pca.transform(X_data[i])
-        X_data[i] = scale(X_data[i])
     y_data = scale(y_data)
     return X_data, y_data
 
@@ -101,7 +119,7 @@ X_test, y_test = create_set(descriptors, energies, (train_size + validation_size
 # Create model and train it
 print('Creating neural network...')
 model = NN.create(
-    atoms=[0,0,1,1,1,1,1],
+    atoms=params['atoms'],
     desc_length=np.shape(descriptors)[2],
     comp_params=params['model']['compilation'],
     sub_hidden_layers_params=params['submodel']['hidden_layers'],
@@ -132,12 +150,12 @@ plt.xlabel('True value of energy')
 plt.ylabel('Predicted value')
 plt.show()
 
-plt.plot(history.history['loss'])
-plt.plot(history.history['val_loss'])
-plt.ylabel('model loss')
-plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='best')
-plt.show()
+#plt.plot(history.history['loss'])
+#plt.plot(history.history['val_loss'])
+#plt.ylabel('model loss')
+#plt.xlabel('epoch')
+#plt.legend(['train', 'test'], loc='best')
+#plt.show()
 
 """
 max_metrics_name_length = len(max(model.metrics_names, key=len))

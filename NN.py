@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import numpy as np
 from collections import Counter
 from keras import Model
 from keras.models import Sequential
@@ -13,7 +14,7 @@ def create_submodel(hidden_layers_params, output_layer_params):
     return model
 
 def create(atoms, desc_length, comp_params, sub_hidden_layers_params, sub_output_layer_params):
-    n_types = len(Counter(atoms).keys())
+    n_types = len(np.unique(atoms))
     submodels = []
     for i in range(n_types):
         submodels.append(
