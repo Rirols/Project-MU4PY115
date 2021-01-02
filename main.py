@@ -2,8 +2,8 @@
 
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' # disable annoying warnings from tensorflow
-import warnings
-warnings.filterwarnings("ignore", message="Numerical issues were encountered ")
+#import warnings
+#warnings.filterwarnings('ignore', message='Numerical issues were encountered')
 
 import data
 import preprocessing
@@ -11,8 +11,7 @@ import NN
 import numpy as np
 import matplotlib.pyplot as plt
 from keras import losses, optimizers, metrics, callbacks
-from sklearn.preprocessing import scale
-import monte_carlo
+#import monte_carlo
 
 params = {
     'dataset': 'zundel',
@@ -65,11 +64,11 @@ params = {
     },
     'fit': {
         'batch_size': 32,
+        'epochs': 100,
         'callbacks' : [
             callbacks.EarlyStopping(monitor='loss', patience=3), 
             callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=3)
-        ],
-        'epochs': 100
+        ]
     }
 }
 
@@ -85,16 +84,15 @@ descriptors = preprocessing.pca(
     params=params['pca']
 )
 
-#descriptors = preprocessing.scale(
-#    atoms=params['atoms'],
-#    descriptors=descriptors
-#)
-
-#import sys
-#sys.exit(0)
-
 train_size = int(params['train_set_size_ratio'] * np.shape(descriptors)[0])
 validation_size = int(params['validation_set_size_ratio'] * np.shape(descriptors)[0])
+
+print('Generating train, validation and test sets...')
+X_train, y_train, X_validation, y_validation, X_test, y_test = preprocessing.generate_scaled_sets(
+        atoms=params['atoms'],
+        desc=descriptors,
+        energies=energies,
+        ratios=(params['train_set_size_ratio'], params['validation_set_size_ratio']))
 
 def convert_to_inputs(raw):
     raw_t = raw.transpose(1, 0, 2)
@@ -103,18 +101,9 @@ def convert_to_inputs(raw):
         X.append(raw_t[i])
     return X
 
-def create_set(X, y, indexes):
-    X_data, y_data = X[indexes[0]:indexes[1]], y[indexes[0]:indexes[1]]
-    X_data = preprocessing.scale(params['atoms'], X_data)
-    X_data = convert_to_inputs(X_data)
-    y_data = scale(y_data)
-    return X_data, y_data
-
-print('Generating train, validation and test sets...')
-X_train, y_train = create_set(descriptors, energies, (0, train_size))
-X_validation, y_validation = create_set(
-    descriptors, energies, (train_size, train_size + validation_size))
-X_test, y_test = create_set(descriptors, energies, (train_size + validation_size, -1))
+X_train = convert_to_inputs(X_train)
+X_validation = convert_to_inputs(X_validation)
+X_test = convert_to_inputs(X_test)
 
 # Create model and train it
 print('Creating neural network...')
@@ -150,12 +139,12 @@ plt.xlabel('True value of energy')
 plt.ylabel('Predicted value')
 plt.show()
 
-#plt.plot(history.history['loss'])
-#plt.plot(history.history['val_loss'])
-#plt.ylabel('model loss')
-#plt.xlabel('epoch')
-#plt.legend(['train', 'test'], loc='best')
-#plt.show()
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.ylabel('model loss')
+plt.xlabel('epoch')
+plt.legend(['train', 'test'], loc='best')
+plt.show()
 
 """
 max_metrics_name_length = len(max(model.metrics_names, key=len))

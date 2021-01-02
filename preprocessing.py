@@ -3,11 +3,11 @@
 import numpy as np
 from collections import Counter
 from sklearn.decomposition import PCA
-from sklearn.preprocessing import scale as SCALE
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, MaxAbsScaler
 
 def pca(atoms, descriptors, params):
     n_config, n_elts, n_dim = np.shape(descriptors)
-    result = np.ones((
+    result = np.empty((
         n_config, n_elts,
         n_dim if params['n_components'] == None else params['n_components']
     ))
@@ -27,18 +27,50 @@ def pca(atoms, descriptors, params):
 
     return result
 
-def scale(atoms, descriptors):
+
+def scale(atoms, descriptors, scale_func):
     n_config, n_elts, n_dim = np.shape(descriptors)
-    result = np.ones((n_config, n_elts, n_dim))
+    result = np.empty((n_config, n_elts, n_dim))
 
     n_types = len(np.unique(atoms))
     for i in range(n_types):
         indexes = np.where(atoms == i)[0]
         n_sub_elts = len(indexes)
 
+        # Scale on all similar elements
         result[:, indexes] = np.reshape(
-            SCALE(descriptors[:, atoms == i].reshape((n_config * n_sub_elts, n_dim))),
+            scale_func(descriptors[:, atoms == i].reshape((n_config * n_sub_elts, n_dim))),
             (n_config, n_sub_elts, n_dim)
         )
 
     return result
+
+
+def scale_sets(atoms, sets):
+    result = []
+    scaler = StandardScaler()
+
+    for i in range(len(sets)):
+        result.append(
+            scale(atoms, sets[i], scaler.fit_transform if i == 0 else scaler.transform))
+
+    return result
+
+
+def generate_scaled_sets(atoms, desc, energies, ratios):
+    train_size = int(ratios[0] * np.shape(desc)[0])
+    validation_size = int(ratios[1] * np.shape(desc)[0])
+    cumul_size = train_size + validation_size
+
+    X_train, y_train = desc[:train_size], energies[:train_size]
+    X_validation, y_validation = desc[train_size:cumul_size], energies[train_size:cumul_size]
+    X_test, y_test = desc[cumul_size:], energies[cumul_size:]
+
+    X_train, X_validation, X_test = scale_sets(atoms, [X_train, X_validation, X_test]) 
+
+    scaler = StandardScaler()
+    y_train = scaler.fit_transform(y_train.reshape(-1,1))
+    y_validation = scaler.transform(y_validation.reshape(-1,1))
+    y_test = scaler.transform(y_test.reshape(-1,1))
+
+    return X_train, y_train, X_validation, y_validation, X_test, y_test
