@@ -11,6 +11,7 @@ import NN
 import numpy as np
 import matplotlib.pyplot as plt
 from keras import losses, optimizers, metrics, callbacks
+from sklearn.preprocessing import StandardScaler
 #import monte_carlo
 
 params = {
@@ -27,6 +28,10 @@ params = {
     'pca': {
         'n_components': None,
         'svd_solver': 'auto'
+    },
+    'scalers': {
+        'desc_scaler': StandardScaler(),
+        'energies_scaler': StandardScaler()
     },
     'train_set_size_ratio': 0.6,
     'validation_set_size_ratio': 0.2,
@@ -92,7 +97,9 @@ X_train, y_train, X_validation, y_validation, X_test, y_test = preprocessing.gen
         atoms=params['atoms'],
         desc=descriptors,
         energies=energies,
-        ratios=(params['train_set_size_ratio'], params['validation_set_size_ratio']))
+        ratios=(params['train_set_size_ratio'], params['validation_set_size_ratio']),
+        desc_scaler=params['scalers']['desc_scaler'],
+        energies_scaler=params['scalers']['energies_scaler'])
 
 def convert_to_inputs(raw):
     raw_t = raw.transpose(1, 0, 2)

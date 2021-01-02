@@ -3,7 +3,6 @@
 import numpy as np
 from collections import Counter
 from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, MaxAbsScaler
 
 def pca(atoms, descriptors, params):
     n_config, n_elts, n_dim = np.shape(descriptors)
@@ -46,10 +45,8 @@ def scale(atoms, descriptors, scale_func):
     return result
 
 
-def scale_sets(atoms, sets):
+def scale_sets(atoms, sets, scaler):
     result = []
-    scaler = StandardScaler()
-
     for i in range(len(sets)):
         result.append(
             scale(atoms, sets[i], scaler.fit_transform if i == 0 else scaler.transform))
@@ -57,7 +54,8 @@ def scale_sets(atoms, sets):
     return result
 
 
-def generate_scaled_sets(atoms, desc, energies, ratios):
+def generate_scaled_sets(
+    atoms, desc, energies, ratios, desc_scaler, energies_scaler):
     train_size = int(ratios[0] * np.shape(desc)[0])
     validation_size = int(ratios[1] * np.shape(desc)[0])
     cumul_size = train_size + validation_size
@@ -66,11 +64,11 @@ def generate_scaled_sets(atoms, desc, energies, ratios):
     X_validation, y_validation = desc[train_size:cumul_size], energies[train_size:cumul_size]
     X_test, y_test = desc[cumul_size:], energies[cumul_size:]
 
-    X_train, X_validation, X_test = scale_sets(atoms, [X_train, X_validation, X_test]) 
+    X_train, X_validation, X_test = scale_sets(
+        atoms, [X_train, X_validation, X_test], desc_scaler) 
 
-    scaler = StandardScaler()
-    y_train = scaler.fit_transform(y_train.reshape(-1,1))
-    y_validation = scaler.transform(y_validation.reshape(-1,1))
-    y_test = scaler.transform(y_test.reshape(-1,1))
+    y_train = energies_scaler.fit_transform(y_train.reshape(-1,1))
+    y_validation = energies_scaler.transform(y_validation.reshape(-1,1))
+    y_test = energies_scaler.transform(y_test.reshape(-1,1))
 
     return X_train, y_train, X_validation, y_validation, X_test, y_test
