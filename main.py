@@ -74,6 +74,12 @@ params = {
             callbacks.EarlyStopping(monitor='loss', patience=10), 
             callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=10)
         ]
+    },
+    'Monte-Carlo': {
+        'temperature': 100,
+        'Number_of_steps': 100000,
+        'box_size': 2,
+        
     }
 }
 
@@ -163,6 +169,4 @@ for i in range(len(model.metrics_names)):
     print(line.format(model.metrics_names[i], scores[i]))
 """
 
-#monte_carlo.MC_loop(delta=2, number=7, model=model, dataset=params['dataset'], 
-                    #limit=params['dataset_size_limit'], loop_size=10)
-
+#MC_pos, taux = monte_carlo.MC_loop(params, model)

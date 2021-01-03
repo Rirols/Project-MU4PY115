@@ -5,6 +5,8 @@
 
 import numpy as np
 import data
+import pickle
+from ase import Atoms
 
 def convert_to_inputs(raw):
     raw_t = raw.transpose(1, 0, 2)
@@ -13,54 +15,61 @@ def convert_to_inputs(raw):
         X.append(raw_t[i])
     return X
 
-def MC_loop(delta, number, model, dataset, limit,  loop_size):
-    """
+def MC_loop(parameters, model):
+    
+    delta = parameters['Monte-Carlo']['box_size']
+    kb = 1.381e-23*2.294e+17 # conversion Hartree/K# conversion Hartree/K
+    beta = 1/(kb*parameters['Monte-Carlo']['temperature'])
+    acceptance = 0
     
 
-    Parameters
-    ----------
-    delta : float
-        Size of the box in which the particles move randomly.
-    number: integer
-        Number of particles 
-    model : tensorflow.python.keras.engine.functional.Functional
-        NN we want to test. Takes particlespositions as input 
-        and total energy as output
-    dataset: 
-        energies and positions
-    limit: 
-        reduces the size of the dataset
-    loop_size : int
-        Optimize.
-
-    Returns positions
-    """
+    all_positions = pickle.load(open('./data/zundel_100K_pos', 'rb'))
+    all_energies= pickle.load(open('./data/zundel_100K_energy', 'rb'))
     
-
-    all_positions, all_energies = data.load(dataset=dataset, limit=limit)
-    positions= all_positions[0]
-    energy = all_energies[0]
+    step = 100
+    all_positions, all_energies = all_positions[::step], all_energies[1::step]
+    tot_time = np.shape(all_positions)[0]
+    molecs = np.empty(tot_time, dtype=object)
+    for t in range(tot_time):
+        molecs[t] = Atoms('O2H5', positions=all_positions[t])
     
-    for i in range(loop_size):
+    init_time = np.random.randint(np.shape(all_positions)[0]-1)
+    positions= all_positions[init_time]
+    energy = all_energies[init_time + 1]
+        
+    for i in range(parameters['Monte-Carlo']['Number_of_steps']):
         
         #Random position
-        try_positions = positions + ((np.random.random((number,3))*2*delta)-delta)
+        try_positions = positions + np.random.random((7,3))*delta-delta/2
+        print(np.shape(try_positions))
         
-        #Energy of the new position
-        descriptors = data.compute_desc(positions, dataset='zundel', 
-                                       soap_params=None, parallelize=True)
-        descriptors=convert_to_inputs(descriptors)
-        try_energy=model.fit(descriptors)
+        #convert random position into input
+        descriptor = data.compute_desc(molecs, dataset=parameters['dataset'], 
+                    soap_params=parameters['soap'], parallelize=True)
+        
+        #PCA + scaling
+        
+        descriptor = convert_to_inputs(descriptor)
+        print(np.shape(descriptor))
+        
+        try_energy=model.predict(descriptor)
     
-        diff_E = energy - try_energy
+        diff_E = energy - parameters['scalers']['energies_scaler'].inverse_transform(try_energy)
+        
+        print(np.shape(energy))
+        print(np.shape(try_energy))
+        print(np.shape(diff_E))
 
         if diff_E < 0 : 
             energy = try_energy
             positions = try_positions
+            acceptance += 1
             
-        elif np.exp(-delta * (diff_E)) >= np.random.random():
+        elif np.exp(-beta * (diff_E)) >= np.random.random():
             energy = try_energy
             positions = try_positions
         else:
             pass
-    return positions
+        
+    acceptance_rate = acceptance/parameters['Monte-Carlo']['Number_of_steps']
+    return positions, acceptance_rate
