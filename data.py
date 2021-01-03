@@ -11,9 +11,10 @@ from dscribe.descriptors import SOAP
 data_path='data'
 
 datasets = {
-    'zundel': {
+    'zundel_100k': {
         'atoms': 7,
         'symbols': 'O2H5',
+        'list': np.array([0, 0, 1, 1, 1, 1, 1]),
         'data': {
             'pos': join(data_path, 'zundel_100K_pos'),
             'energies': join(data_path, 'zundel_100K_energy'),
@@ -26,14 +27,21 @@ datasets = {
     }
 }
 
+def get_atoms_list(dataset='zundel_100k'):
+    return np.copy(datasets[dataset]['list'])
 
-def load(dataset='zundel', limit=None):
+def load(dataset='zundel_100k', limit=None):
     params = datasets[dataset]
     
     pos = pickle.load(open(params['data']['pos'], 'rb'))
     energies = pickle.load(open(params['data']['energies'], 'rb'))
-    step = params['data']['thinning_step']
-    pos, energies = pos[::step], energies[::step]
+
+    if (dataset == 'zundel_100k'):
+        pos = pos[:-1]
+        energies = energies[1:]
+
+    #step = params['data']['thinning_step']
+    #pos, energies = pos[::step], energies[::step]
 
     if limit != None:
         pos, energies = pos[:limit], energies[:limit]
@@ -45,8 +53,7 @@ def load(dataset='zundel', limit=None):
 
     return molecs, energies
 
-
-def compute_desc(molecs, dataset='zundel', soap_params=None, parallelize=True):
+def compute_desc(molecs, dataset='zundel_100k', soap_params=None, parallelize=True):
     params = copy.deepcopy(datasets[dataset])
     if soap_params != None:
         params['soap'].update(soap_params)
@@ -61,8 +68,7 @@ def compute_desc(molecs, dataset='zundel', soap_params=None, parallelize=True):
     return np.reshape(descriptors,
         (tot_time, params['atoms'], np.shape(descriptors)[1]))
 
-
-def load_and_compute(dataset='zundel', limit=None, soap_params=None, parallelize=True):
+def load_and_compute(dataset='zundel_100k', limit=None, soap_params=None, parallelize=True):
     """
     Load a specific dataset and compute descriptors
 

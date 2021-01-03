@@ -2,8 +2,6 @@
 
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' # disable annoying warnings from tensorflow
-#import warnings
-#warnings.filterwarnings('ignore', message='Numerical issues were encountered')
 
 import data
 import preprocessing
@@ -15,27 +13,29 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 #import monte_carlo
 
 params = {
-    'dataset': 'zundel',
+    'dataset': 'zundel_100k',
     'dataset_size_limit': 100000,
-    'atoms': np.array([0,0,1,1,1,1,1]),
     'soap': {
+        # https://singroup.github.io/dscribe/latest/tutorials/soap.html
         'sigma': 1, #initial: 0.01
-        'nmax': 2,  #3
-        'lmax': 5,  #3
-        'rcut': 7   #7
+        'nmax': 3,  #3
+        'lmax': 2,  #3
+        'rcut': 9   #7
     },
-    # https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html
     'pca': {
-        'n_components': None,
+        # https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html
+        'n_components': 20,
         'svd_solver': 'auto'
     },
     'scalers': {
-        'desc_scaler': StandardScaler(),
-        'energies_scaler': StandardScaler()
+        # https://scikit-learn.org/stable/modules/preprocessing.html
+        'desc_scaler_type': StandardScaler,
+        'energies_scaler': MinMaxScaler()
     },
     'train_set_size_ratio': 0.6,
     'validation_set_size_ratio': 0.2,
     'submodel': {
+        # https://keras.io/guides/sequential_model/
         'hidden_layers': {
             'units': 30,
             'activation': 'tanh',
@@ -52,7 +52,7 @@ params = {
             'use_bias': True,
             'kernel_initializer': 'GlorotUniform',
             'kernel_regularizer': None,
-            'bias_regularizer': 'l1',
+            'bias_regularizer': None,
             'activity_regularizer': None,
             'kernel_constraint': None,
             'bias_constraint': None
@@ -71,8 +71,8 @@ params = {
         'batch_size': 32,
         'epochs': 100,
         'callbacks' : [
-            callbacks.EarlyStopping(monitor='loss', patience=3), 
-            callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=3)
+            callbacks.EarlyStopping(monitor='loss', patience=10), 
+            callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=10)
         ]
     }
 }
@@ -82,24 +82,17 @@ print('Computing descriptors...')
 descriptors, energies = data.load_and_compute(
     dataset=params['dataset'], soap_params=params['soap'], limit=params['dataset_size_limit'])
 
-#print('Applying PCA...')
-#descriptors = preprocessing.pca(
-#    atoms=params['atoms'],
-#    descriptors=descriptors,
-#    params=params['pca']
-#)
-
 train_size = int(params['train_set_size_ratio'] * np.shape(descriptors)[0])
 validation_size = int(params['validation_set_size_ratio'] * np.shape(descriptors)[0])
 
 print('Generating train, validation and test sets...')
 X_train, y_train, X_validation, y_validation, X_test, y_test = preprocessing.generate_scaled_sets(
-        atoms=params['atoms'],
+        atoms=data.get_atoms_list(params['dataset']),
         desc=descriptors,
         energies=energies,
         ratios=(params['train_set_size_ratio'], params['validation_set_size_ratio']),
         pca_params=params['pca'],
-        desc_scaler=params['scalers']['desc_scaler'],
+        desc_scaler_type=params['scalers']['desc_scaler_type'],
         energies_scaler=params['scalers']['energies_scaler'])
 
 def convert_to_inputs(raw):
@@ -116,7 +109,7 @@ X_test = convert_to_inputs(X_test)
 # Create model and train it
 print('Creating neural network...')
 model = NN.create(
-    atoms=params['atoms'],
+    atoms=data.get_atoms_list(params['dataset']),
     desc_length=np.shape(X_train[0])[1],
     comp_params=params['model']['compilation'],
     sub_hidden_layers_params=params['submodel']['hidden_layers'],
@@ -142,8 +135,13 @@ print('Number of epochs run:', len(history.history['loss']))
 y_train_pred = model.predict(X_train)
 y_test_pred = model.predict(X_test)
 
-plt.plot(y_test, y_test_pred[-1], '.')
-plt.plot(y_train, y_train_pred[-1], '.')
+y_train = params['scalers']['energies_scaler'].inverse_transform(y_train)
+y_test = params['scalers']['energies_scaler'].inverse_transform(y_test)
+y_train_pred = params['scalers']['energies_scaler'].inverse_transform(y_train_pred)
+y_test_pred = params['scalers']['energies_scaler'].inverse_transform(y_test_pred)
+
+plt.plot(y_test, y_test_pred, '+')
+#plt.plot(y_train, y_train_pred, '+')
 plt.plot(y_test, y_test)
 plt.xlabel('True value of energy')
 plt.ylabel('Predicted value')
