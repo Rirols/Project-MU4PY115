@@ -27,9 +27,8 @@ def create(atoms, desc_length, comp_params, sub_hidden_layers_params, sub_output
     layers = []
     for i in range(len(atoms)):
         layers.append(submodels[atoms[i]](inputs[i]))
-    layers.append(Add()(layers))
 
-    model = Model(inputs, layers)
+    model = Model(inputs, Add()(layers))
     model.compile(**comp_params)
 
     return model
