@@ -11,8 +11,8 @@ import NN
 import numpy as np
 import matplotlib.pyplot as plt
 from keras import losses, optimizers, metrics, callbacks
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
-#import monte_carlo
+from sklearn.preprocessing import StandardScaler
+import monte_carlo
 
 params = {
     'dataset': 'zundel',
@@ -22,7 +22,7 @@ params = {
         'sigma': 1, #initial: 0.01
         'nmax': 2,  #3
         'lmax': 5,  #3
-        'rcut': 7   #7
+        'rcut': 9   #7
     },
     # https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html
     'pca': {
@@ -71,9 +71,15 @@ params = {
         'batch_size': 32,
         'epochs': 100,
         'callbacks' : [
-            callbacks.EarlyStopping(monitor='loss', patience=3), 
-            callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=3)
+            callbacks.EarlyStopping(monitor='loss', patience=10), 
+            callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=10)
         ]
+    },
+    'Monte-Carlo': {
+        'temperature': 100,
+        'Number_of_steps': 100000,
+        'box_size': 2,
+        
     }
 }
 
@@ -142,8 +148,12 @@ print('Number of epochs run:', len(history.history['loss']))
 y_train_pred = model.predict(X_train)
 y_test_pred = model.predict(X_test)
 
+y_test=params['scalers']['energies_scaler'].inverse_transform(y_test)
+y_test_pred=params['scalers']['energies_scaler'].inverse_transform(y_test_pred)
+y_train_pred=params['scalers']['energies_scaler'].inverse_transform(y_train_pred)
+
 plt.plot(y_test, y_test_pred[-1], '.')
-plt.plot(y_train, y_train_pred[-1], '.')
+#plt.plot(y_train, y_train_pred[-1], '.')
 plt.plot(y_test, y_test)
 plt.xlabel('True value of energy')
 plt.ylabel('Predicted value')
@@ -165,6 +175,4 @@ for i in range(len(model.metrics_names)):
     print(line.format(model.metrics_names[i], scores[i]))
 """
 
-#monte_carlo.MC_loop(delta=2, number=7, model=model, dataset=params['dataset'], 
-                    #limit=params['dataset_size_limit'], loop_size=10)
-
+MC_pos, taux = monte_carlo.MC_loop(params, model)
