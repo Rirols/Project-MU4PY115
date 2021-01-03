@@ -7,8 +7,6 @@ import numpy as np
 import data
 import pickle
 from ase import Atoms
-from dscribe.descriptors import SOAP
-
 
 def convert_to_inputs(raw):
     raw_t = raw.transpose(1, 0, 2)
@@ -19,41 +17,48 @@ def convert_to_inputs(raw):
 
 def MC_loop(parameters, model):
     
-    
-    #Set up variables
     delta = parameters['Monte-Carlo']['box_size']
     kb = 1.381e-23*2.294e+17 # conversion Hartree/K# conversion Hartree/K
     beta = 1/(kb*parameters['Monte-Carlo']['temperature'])
     acceptance = 0
+    
 
-    #load positions, energies
     all_positions = pickle.load(open('./data/zundel_100K_pos', 'rb'))
     all_energies= pickle.load(open('./data/zundel_100K_energy', 'rb'))
     
-    #Random initial state
-    init_time = np.random.randint(np.shape(all_positions)[0]-1)
-    positions= all_positions[init_time]
-    energy = all_energies[init_time + 1]
-    
+    step = 100
+    all_positions, all_energies = all_positions[::step], all_energies[1::step]
     tot_time = np.shape(all_positions)[0]
     molecs = np.empty(tot_time, dtype=object)
     for t in range(tot_time):
         molecs[t] = Atoms('O2H5', positions=all_positions[t])
     
-    #MC
+    init_time = np.random.randint(np.shape(all_positions)[0]-1)
+    positions= all_positions[init_time]
+    energy = all_energies[init_time + 1]
+        
     for i in range(parameters['Monte-Carlo']['Number_of_steps']):
         
-        #Test random position, try energy
+        #Random position
         try_positions = positions + np.random.random((7,3))*delta-delta/2
-        soap = SOAP(**parameters['soap'])
-        descriptor = soap.create(molecs,
-                    positions=try_positions,
-                    n_jobs=4)
+        print(np.shape(try_positions))
         
-        try_energy = model.predict(descriptor)
+        #convert random position into input
+        descriptor = data.compute_desc(molecs, dataset=parameters['dataset'], 
+                    soap_params=parameters['soap'], parallelize=True)
         
+        #PCA + scaling
+        
+        descriptor = convert_to_inputs(descriptor)
+        print(np.shape(descriptor))
+        
+        try_energy=model.predict(descriptor)
     
         diff_E = energy - parameters['scalers']['energies_scaler'].inverse_transform(try_energy)
+        
+        print(np.shape(energy))
+        print(np.shape(try_energy))
+        print(np.shape(diff_E))
 
         if diff_E < 0 : 
             energy = try_energy
