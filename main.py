@@ -24,8 +24,7 @@ params = {
     },
     'pca': {
         # https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html
-        'n_components': 20,
-        'svd_solver': 'auto'
+        'variance': 0.999999
     },
     'scalers': {
         # https://scikit-learn.org/stable/modules/preprocessing.html
@@ -79,7 +78,6 @@ params = {
         'temperature': 100,
         'Number_of_steps': 100000,
         'box_size': 2,
-        
     }
 }
 

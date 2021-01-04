@@ -72,25 +72,16 @@ def transform_set(atoms, descriptors, transformers):
 
 def apply_pca_on_sets(atoms, sets, pca_params):
     pcas = create_fitted_transformers(
-        atoms=atoms,
-        descriptors=sets[0],
-        trans_type=PCA,
-        trans_params=pca_params
-    )
+        atoms=atoms, descriptors=sets[0], trans_type=PCA, trans_params=pca_params)
 
     result = []
     for i in range(len(sets)):
-        n_config, n_elts, n_dim = np.shape(sets[i])
-        n_dim = pcas[0].n_components_
         result.append(transform_set(atoms, sets[i], pcas))
     return result
 
 def scale_sets(atoms, sets, scaler_type):
     scalers = create_fitted_transformers(
-        atoms=atoms,
-        descriptors=sets[0],
-        trans_type=scaler_type
-    )
+        atoms=atoms, descriptors=sets[0], trans_type=scaler_type)
 
     result = []
     for i in range(len(sets)):
@@ -107,9 +98,21 @@ def generate_scaled_sets(
     X_validation, y_validation = desc[train_size:cumul_size], energies[train_size:cumul_size]
     X_test, y_test = desc[cumul_size:], energies[cumul_size:]
 
-    #X_train, X_validation, X_test = apply_pca_on_sets(
-    #    atoms, [X_train, X_validation, X_test], pca_params
-    #)
+    # Calculate the number of components to keep when using PCA
+    pcas = create_fitted_transformers(
+        atoms=atoms, descriptors=X_train, trans_type=PCA)
+
+    n_components_list = []
+    for i in range(len(pcas)):
+        n_components_list.append(
+            np.where(
+                np.cumsum(pcas[i].explained_variance_ratio_) > pca_params['variance'])[0][0]
+        )
+    n_components = max(n_components_list)
+    
+    X_train, X_validation, X_test = apply_pca_on_sets(
+        atoms, [X_train, X_validation, X_test], { 'n_components': n_components }
+    )
 
     X_train, X_validation, X_test = scale_sets(
         atoms, [X_train, X_validation, X_test], desc_scaler_type
