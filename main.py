@@ -13,73 +13,73 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 #import monte_carlo
 
 params = {
-    'dataset': 'zundel_100k',
-    'dataset_size_limit': 100000,
-    'soap': {
-        # https://singroup.github.io/dscribe/latest/tutorials/soap.html
-        'sigma': 1, #initial: 0.01
-        'nmax': 3,  #3
-        'lmax': 2,  #3
-        'rcut': 9   #7
-    },
-    'pca': {
-        # https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html
-        'variance': 0.999999
-    },
-    'scalers': {
-        # https://scikit-learn.org/stable/modules/preprocessing.html
-        'desc_scaler_type': StandardScaler,
-        'energies_scaler': MinMaxScaler()
-    },
-    'train_set_size_ratio': 0.6,
-    'validation_set_size_ratio': 0.2,
-    'submodel': {
-        # https://keras.io/guides/sequential_model/
-        'hidden_layers': {
-            'units': 30,
-            'activation': 'tanh',
-            'use_bias': True,
-            'kernel_initializer': 'GlorotUniform',
-            'kernel_regularizer': None,
-            'bias_regularizer': None,
-            'activity_regularizer': None,
-            'kernel_constraint': None,
-            'bias_constraint': None
-        },
-        'output_layer': {
-            'activation': 'linear',
-            'use_bias': True,
-            'kernel_initializer': 'GlorotUniform',
-            'kernel_regularizer': None,
-            'bias_regularizer': None,
-            'activity_regularizer': None,
-            'kernel_constraint': None,
-            'bias_constraint': None
-        },
-    },
-    'model': {
-        'compilation': {
-            'optimizer': optimizers.Adam(
-                learning_rate=0.001
-            ),
-            'loss': losses.MeanSquaredError(),
-            'metrics': metrics.MeanSquaredError(),
+        'dataset': 'zundel_100k',
+        'dataset_size_limit': 100000,
+        'soap': {
+            # https://singroup.github.io/dscribe/latest/tutorials/soap.html
+            'sigma': 1, #initial: 0.01
+            'nmax': 5,  #3
+            'lmax': 2,  #3
+            'rcut': 9   #7
+            },
+        'pca': {
+            # https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html
+            'variance': 0.999999
+            },
+        'scalers': {
+            # https://scikit-learn.org/stable/modules/preprocessing.html
+            'desc_scaler_type': StandardScaler,
+            'energies_scaler': MinMaxScaler()
+            },
+        'train_set_size_ratio': 0.6,
+        'validation_set_size_ratio': 0.2,
+        'submodel': {
+            # https://keras.io/guides/sequential_model/
+            'hidden_layers': {
+                'units': 30,
+                'activation': 'tanh',
+                'use_bias': True,
+                'kernel_initializer': 'GlorotUniform',
+                'kernel_regularizer': None,
+                'bias_regularizer': 'l2',
+                'activity_regularizer': None,
+                'kernel_constraint': None,
+                'bias_constraint': None
+                },
+            'output_layer': {
+                'activation': 'linear',
+                'use_bias': True,
+                'kernel_initializer': 'Zeros',
+                'kernel_regularizer': None,
+                'bias_regularizer': None,
+                'activity_regularizer': None,
+                'kernel_constraint': None,
+                'bias_constraint': None
+                },
+            },
+        'model': {
+            'compilation': {
+                'optimizer': optimizers.Adam(
+                    learning_rate=0.001
+                    ),
+                'loss': losses.MeanSquaredError(),
+                'metrics': metrics.MeanSquaredError(),
+                }
+            },
+        'fit': {
+            'batch_size': 32,
+            'epochs': 100,
+            'callbacks' : [
+                callbacks.EarlyStopping(monitor='loss', patience=7), 
+                callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=10)
+                ]
+            },
+        'Monte-Carlo': {
+            'temperature': 100,
+            'Number_of_steps': 100000,
+            'box_size': 2,
+            }
         }
-    },
-    'fit': {
-        'batch_size': 32,
-        'epochs': 100,
-        'callbacks' : [
-            callbacks.EarlyStopping(monitor='loss', patience=10), 
-            callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=10)
-        ]
-    },
-    'Monte-Carlo': {
-        'temperature': 100,
-        'Number_of_steps': 100000,
-        'box_size': 2,
-    }
-}
 
 # Load dataset and compute descriptors
 print('Computing descriptors...')
@@ -151,12 +151,12 @@ plt.xlabel('True value of energy')
 plt.ylabel('Predicted value')
 plt.show()
 
-#plt.plot(history.history['loss'])
-#plt.plot(history.history['val_loss'])
-#plt.ylabel('model loss')
-#plt.xlabel('epoch')
-#plt.legend(['train', 'test'], loc='best')
-#plt.show()
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.ylabel('model loss')
+plt.xlabel('epoch')
+plt.legend(['train', 'test'], loc='best')
+plt.show()
 
 """
 max_metrics_name_length = len(max(model.metrics_names, key=len))
