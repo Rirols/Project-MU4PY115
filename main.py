@@ -13,73 +13,73 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 #import monte_carlo
 
 params = {
-        'dataset': 'zundel_100k',
-        'dataset_size_limit': 100000,
-        'soap': {
-            # https://singroup.github.io/dscribe/latest/tutorials/soap.html
-            'sigma': 1, #initial: 0.01
-            'nmax': 5,  #3
-            'lmax': 2,  #3
-            'rcut': 9   #7
-            },
-        'pca': {
-            # https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html
-            'variance': 0.999999
-            },
-        'scalers': {
-            # https://scikit-learn.org/stable/modules/preprocessing.html
-            'desc_scaler_type': StandardScaler,
-            'energies_scaler': MinMaxScaler()
-            },
-        'train_set_size_ratio': 0.6,
-        'validation_set_size_ratio': 0.2,
-        'submodel': {
-            # https://keras.io/guides/sequential_model/
-            'hidden_layers': {
-                'units': 30,
-                'activation': 'tanh',
-                'use_bias': True,
-                'kernel_initializer': 'GlorotUniform',
-                'kernel_regularizer': None,
-                'bias_regularizer': 'l2',
-                'activity_regularizer': None,
-                'kernel_constraint': None,
-                'bias_constraint': None
-                },
-            'output_layer': {
-                'activation': 'linear',
-                'use_bias': True,
-                'kernel_initializer': 'Zeros',
-                'kernel_regularizer': None,
-                'bias_regularizer': None,
-                'activity_regularizer': None,
-                'kernel_constraint': None,
-                'bias_constraint': None
-                },
-            },
-        'model': {
-            'compilation': {
-                'optimizer': optimizers.Adam(
-                    learning_rate=0.001
-                    ),
-                'loss': losses.MeanSquaredError(),
-                'metrics': metrics.MeanSquaredError(),
-                }
-            },
-        'fit': {
-            'batch_size': 32,
-            'epochs': 100,
-            'callbacks' : [
-                callbacks.EarlyStopping(monitor='loss', patience=7), 
-                callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=10)
-                ]
-            },
-        'Monte-Carlo': {
-            'temperature': 100,
-            'Number_of_steps': 100000,
-            'box_size': 2,
-            }
+    'dataset': 'zundel_100k',
+    'dataset_size_limit': 100000,
+    'soap': {
+        # https://singroup.github.io/dscribe/latest/tutorials/soap.html
+        'sigma': 1, #initial: 0.01
+        'nmax': 5,  #3
+        'lmax': 2,  #3
+        'rcut': 9   #7
+    },
+    'pca': {
+        # https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html
+        'variance': 0.999999
+    },
+    'scalers': {
+        # https://scikit-learn.org/stable/modules/preprocessing.html
+        'desc_scaler_type': StandardScaler,
+        'energies_scaler': MinMaxScaler()
+    },
+    'train_set_size_ratio': 0.6,
+    'validation_set_size_ratio': 0.2,
+    'submodel': {
+        # https://keras.io/guides/sequential_model/
+        'hidden_layers': {
+            'units': 30,
+            'activation': 'tanh',
+            'use_bias': True,
+            'kernel_initializer': 'GlorotUniform',
+            'kernel_regularizer': None,
+            'bias_regularizer': 'l2',
+            'activity_regularizer': None,
+            'kernel_constraint': None,
+            'bias_constraint': None
+        },
+        'output_layer': {
+            'activation': 'linear',
+            'use_bias': True,
+            'kernel_initializer': 'Zeros',
+            'kernel_regularizer': None,
+            'bias_regularizer': None,
+            'activity_regularizer': None,
+            'kernel_constraint': None,
+            'bias_constraint': None
+        },
+    },
+    'model': {
+        'compilation': {
+            'optimizer': optimizers.Adam(
+                learning_rate=0.001
+                ),
+            'loss': losses.MeanSquaredError(),
+            'metrics': metrics.MeanSquaredError(),
         }
+    },
+    'fit': {
+        'batch_size': 32,
+        'epochs': 100,
+        'callbacks' : [
+            callbacks.EarlyStopping(monitor='loss', patience=7), 
+            callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=10)
+        ]
+    },
+    'Monte-Carlo': {
+        'temperature': 100,
+        'Number_of_steps': 100000,
+        'box_size': 2,
+    }
+}
 
 # Load dataset and compute descriptors
 print('Computing descriptors...')
@@ -129,12 +129,18 @@ history = model.fit(
     **params['fit']
 )
 
-# Calculate and print scores
-scores = model.evaluate(X_test, y_test, verbose=0)
-print()
-print('Test loss:', scores[0])
-print('MSE:', scores[1])
 print('Number of epochs run:', len(history.history['loss']))
+
+# Calculate and print scores
+print('Evaluating model performance on test set...')
+scores = model.evaluate(X_test, y_test, verbose=0)
+
+max_metrics_name_length = len(max(model.metrics_names, key=len))
+print()
+print(' Scores '.center(max_metrics_name_length + 13, '='))
+line = '{:<%i} : {:.4e}' % max_metrics_name_length
+for i in range(len(model.metrics_names)):
+    print(line.format(model.metrics_names[i], scores[i]))
 
 y_train_pred = model.predict(X_train)
 y_test_pred = model.predict(X_test)
@@ -145,7 +151,7 @@ y_train_pred = params['scalers']['energies_scaler'].inverse_transform(y_train_pr
 y_test_pred = params['scalers']['energies_scaler'].inverse_transform(y_test_pred)
 
 plt.plot(y_test, y_test_pred, '+')
-#plt.plot(y_train, y_train_pred, '+')
+plt.plot(y_train, y_train_pred, '+')
 plt.plot(y_test, y_test)
 plt.xlabel('True value of energy')
 plt.ylabel('Predicted value')
@@ -157,14 +163,5 @@ plt.ylabel('model loss')
 plt.xlabel('epoch')
 plt.legend(['train', 'test'], loc='best')
 plt.show()
-
-"""
-max_metrics_name_length = len(max(model.metrics_names, key=len))
-print('\n')
-print(' Scores '.center(max_metrics_name_length + 12, '='))
-line = '{:<%i} : {:.3e}' % max_metrics_name_length
-for i in range(len(model.metrics_names)):
-    print(line.format(model.metrics_names[i], scores[i]))
-"""
 
 #MC_pos, taux = monte_carlo.MC_loop(params, model)
