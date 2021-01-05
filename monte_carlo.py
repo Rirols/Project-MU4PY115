@@ -7,6 +7,7 @@ import numpy as np
 import data
 import pickle
 from ase import Atoms
+from sklearn.decomposition import PCA
 
 def convert_to_inputs(raw):
     raw_t = raw.transpose(1, 0, 2)
@@ -29,15 +30,13 @@ def MC_loop(parameters, model):
     
     step = 100
     all_positions, all_energies = all_positions[::step], all_energies[1::step]
-    tot_time = np.shape(all_positions)[0]
-    molecs = np.empty(tot_time, dtype=object)
-    for t in range(tot_time):
-        molecs[t] = Atoms('O2H5', positions=all_positions[t])
     
     #Set up random initial configuration
     init_time = np.random.randint(np.shape(all_positions)[0]-1)
     positions= all_positions[init_time]
     energy = all_energies[init_time + 1]
+    print(np.shape(positions))
+    molecs = Atoms('O2H5', positions=positions[1])
     
     #Set up lists to record evolution
     positions_history=np.empty((parameters['Monte-Carlo']['Number_of_steps'],7,3))
@@ -47,24 +46,23 @@ def MC_loop(parameters, model):
         
         #Random position
         try_positions = positions + np.random.random((7,3))*delta-delta/2
-        print(np.shape(try_positions))
         
         #convert random position into input
         descriptor = data.compute_desc(molecs, dataset=parameters['dataset'], 
                     soap_params=parameters['soap'], parallelize=True)
         
         #PCA + scaling
+        n_dim = model.get_layer(index=0).input_shape[0][1] #dimension of preprocessed input
+        pca = PCA(n_components=n_dim)
+        print(np.shape(descriptor))
+        descriptor=pca.fit(descriptor)
+        descriptor=parameters['scalers']['desc_scaler_type'].transform(descriptor)
         
         descriptor = convert_to_inputs(descriptor)
-        print(np.shape(descriptor))
         
         try_energy=model.predict(descriptor)
     
         diff_E = energy - parameters['scalers']['energies_scaler'].inverse_transform(try_energy)
-        
-        print(np.shape(energy))
-        print(np.shape(try_energy))
-        print(np.shape(diff_E))
 
         if diff_E < 0 : 
             energy = try_energy
