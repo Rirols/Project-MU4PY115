@@ -7,6 +7,7 @@ import numpy as np
 import data
 from ase import Atoms
 import preprocessing
+import ase.io
 
 def convert_to_inputs(raw):
     raw_t = raw.transpose(1, 0, 2)
@@ -88,7 +89,9 @@ def MC_loop(parameters, model, pcas, scalers):
         
         positions_history[i]=positions
         energy_history[i]=energy
+        #ase.io.write("positions.xyz",molecs,append=True)
         
     print("acceptance rate=", np.mean(acceptance))
 
-    return np.mean(acceptance), positions_history, energy_history
+    return positions_history, energy_history
+
