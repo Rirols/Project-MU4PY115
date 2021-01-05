@@ -16,12 +16,12 @@ def convert_to_inputs(raw):
     return X
 
 def MC_loop(parameters, model, pcas, scalers):
-    
+    print("Preparing Monte-Carlo simulation...")
     #set up constants
     delta = parameters['Monte-Carlo']['box_size']
-    kb = 1.381e-23*2.294e+17 # conversion Hartree/K# conversion Hartree/K
+    kb = 1.381e-23
     beta = 1/(kb*parameters['Monte-Carlo']['temperature'])
-    acceptance = 0
+    acceptance = []
     
     #load MD data
     all_positions, all_energies = data.load_pos(parameters['dataset'], limit=10000)
@@ -37,7 +37,8 @@ def MC_loop(parameters, model, pcas, scalers):
     #Set up lists to record evolution
     positions_history=np.empty((parameters['Monte-Carlo']['Number_of_steps'],7,3))
     energy_history = np.empty(parameters['Monte-Carlo']['Number_of_steps'])
-        
+    
+    print("Computing Monte-Carlo simulation...(this might take a while)")
     for i in range(parameters['Monte-Carlo']['Number_of_steps']):
         
         #Random position
@@ -65,22 +66,25 @@ def MC_loop(parameters, model, pcas, scalers):
         try_energy=model.predict(descriptor)
     
         diff_E = energy - parameters['scalers']['energies_scaler'].inverse_transform(try_energy)
-
+        #diff_E *= 4.35974434e-18 #conversion Hartree => J
+        
         if diff_E < 0 : 
             energy = try_energy
             positions = try_positions
-            acceptance += 1
+            acceptance.append(1)
             
-        elif np.exp(-beta * (diff_E)) >= np.random.random():
+        elif np.exp(-beta * diff_E) >= np.random.random():
             energy = try_energy
             positions = try_positions
-            acceptance += 1
+            acceptance.append(1)
+            
         else:
+            acceptance.append(0)
             pass
         
         positions_history[i]=positions
         energy_history[i]=energy
         
-    acceptance_rate = acceptance/parameters['Monte-Carlo']['Number_of_steps']
-    
-    return acceptance_rate, positions_history, energy_history
+    print("acceptance rate=", np.mean(acceptance))
+
+    return np.mean(acceptance), positions_history, energy_history
