@@ -32,7 +32,7 @@ def iterate(atoms, descriptors, func, args):
             args=args
         )
 
-def create_fitted_transformers(atoms, descriptors, trans_type, trans_params=None):
+def generate_fitted_transformers(atoms, descriptors, trans_type, trans_params=None):
     """
     Call the fit method of transformers to set them up using a train set
     (transformers can be scalers or PCA instances)
@@ -52,6 +52,21 @@ def create_fitted_transformers(atoms, descriptors, trans_type, trans_params=None
         'trans_type': trans_type, 'trans_params': trans_params, 'trans_list': trans
     })
     return trans
+
+def generate_pca_transformers(atoms, train_desc, pca_params):
+    pcas = generate_fitted_transformers(atoms, train_desc, PCA)
+
+    n_components_list = []
+    for i in range(len(pcas)):
+        n_components_list.append(
+            np.where(
+                np.cumsum(pcas[i].explained_variance_ratio_) > pca_params['variance'])[0][0]
+        )
+    n_components = max(n_components_list)
+
+    return generate_fitted_transformers(
+        atoms, train_desc, PCA, { 'n_components': n_components }
+    )
     
 def transform_set(atoms, descriptors, transformers):
     def func(n_config, n_dim, n_elts, n_sub_elts, subdesc, indexes, sub_elts_id, args):
@@ -67,29 +82,22 @@ def transform_set(atoms, descriptors, transformers):
     result = np.empty(shape)
 
     iterate(atoms, descriptors, func, {
-        'transformers': transformers, 'result': result })
+        'transformers': transformers, 'result': result 
+    })
     return result
 
-def apply_pca_on_sets(atoms, sets, pca_params):
-    pcas = create_fitted_transformers(
-        atoms=atoms, descriptors=sets[0], trans_type=PCA, trans_params=pca_params)
-
+def transform_sets(atoms, sets, transformers):
     result = []
     for i in range(len(sets)):
-        result.append(transform_set(atoms, sets[i], pcas))
+        result.append(transform_set(atoms, sets[i], transformers))
     return result
 
-def scale_sets(atoms, sets, scaler_type):
-    scalers = create_fitted_transformers(
-        atoms=atoms, descriptors=sets[0], trans_type=scaler_type)
+def scale_energies(sets, scaler):
+    transforms = [scaler.transform] * (len(sets) - 1)
+    transforms.insert(0, scaler.fit_transform)
+    return [transforms[i](sets[i]) for i in range(len(sets))]
 
-    result = []
-    for i in range(len(sets)):
-        result.append(transform_set(atoms, sets[i], scalers))
-    return result
-
-def generate_scaled_sets(
-    atoms, desc, energies, ratios, pca_params, desc_scaler_type, energies_scaler):
+def generate_sets(desc, energies, ratios):
     train_size = int(ratios[0] * np.shape(desc)[0])
     validation_size = int(ratios[1] * np.shape(desc)[0])
     cumul_size = train_size + validation_size
@@ -98,28 +106,8 @@ def generate_scaled_sets(
     X_validation, y_validation = desc[train_size:cumul_size], energies[train_size:cumul_size]
     X_test, y_test = desc[cumul_size:], energies[cumul_size:]
 
-    # Calculate the number of components to keep when using PCA
-    pcas = create_fitted_transformers(
-        atoms=atoms, descriptors=X_train, trans_type=PCA)
-
-    n_components_list = []
-    for i in range(len(pcas)):
-        n_components_list.append(
-            np.where(
-                np.cumsum(pcas[i].explained_variance_ratio_) > pca_params['variance'])[0][0]
-        )
-    n_components = max(n_components_list)
-    
-    X_train, X_validation, X_test = apply_pca_on_sets(
-        atoms, [X_train, X_validation, X_test], { 'n_components': n_components }
-    )
-
-    X_train, X_validation, X_test = scale_sets(
-        atoms, [X_train, X_validation, X_test], desc_scaler_type
-    ) 
-
-    y_train = energies_scaler.fit_transform(y_train.reshape(-1,1))
-    y_validation = energies_scaler.transform(y_validation.reshape(-1,1))
-    y_test = energies_scaler.transform(y_test.reshape(-1,1))
+    y_train = y_train.reshape(-1, 1)
+    y_validation = y_validation.reshape(-1, 1)
+    y_test = y_test.reshape(-1, 1)
 
     return X_train, y_train, X_validation, y_validation, X_test, y_test

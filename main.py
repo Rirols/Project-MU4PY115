@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from keras import losses, optimizers, metrics, callbacks
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
-import monte_carlo
+#import monte_carlo
 
 params = {
     'dataset': 'zundel_100k',
@@ -82,6 +82,8 @@ params = {
 }
 
 # Load dataset and compute descriptors
+atoms = data.get_atoms_list(params['dataset'])
+
 print('Computing descriptors...')
 descriptors, energies = data.load_and_compute(
     dataset=params['dataset'], soap_params=params['soap'], limit=params['dataset_size_limit'])
@@ -90,16 +92,36 @@ train_size = int(params['train_set_size_ratio'] * np.shape(descriptors)[0])
 validation_size = int(params['validation_set_size_ratio'] * np.shape(descriptors)[0])
 
 print('Generating train, validation and test sets...')
-X_train, y_train, X_validation, y_validation, X_test, y_test = preprocessing.generate_scaled_sets(
-    atoms=data.get_atoms_list(params['dataset']),
+X_train, y_train, X_validation, y_validation, X_test, y_test = preprocessing.generate_sets(
     desc=descriptors,
     energies=energies,
-    ratios=(params['train_set_size_ratio'], params['validation_set_size_ratio']),
-    pca_params=params['pca'],
-    desc_scaler_type=params['scalers']['desc_scaler_type'],
-    energies_scaler=params['scalers']['energies_scaler']
+    ratios=(params['train_set_size_ratio'], params['validation_set_size_ratio'])
 )
 
+# Apply PCA and scale data
+print('Applying PCA...')
+pcas = preprocessing.generate_pca_transformers(
+    atoms=atoms, train_desc=X_train, pca_params=params['pca']
+)
+
+X_train, X_validation, X_test = preprocessing.transform_sets(
+    atoms=atoms, sets=[X_train, X_validation, X_test], transformers=pcas
+)
+
+print('Scaling data...')
+scalers = preprocessing.generate_fitted_transformers(
+    atoms=atoms, descriptors=X_train, trans_type=params['scalers']['desc_scaler_type']
+)
+
+X_train, X_validation, X_test = preprocessing.transform_sets(
+    atoms=atoms, sets=[X_train, X_validation, X_test], transformers=scalers
+)
+
+y_train, y_validation, y_test = preprocessing.scale_energies(
+    sets=[y_train, y_validation, y_test], scaler=params['scalers']['energies_scaler']
+)
+
+# Format data
 def convert_to_inputs(raw):
     raw_t = raw.transpose(1, 0, 2)
     X = []
@@ -166,4 +188,4 @@ plt.xlabel('epoch')
 plt.legend(['train', 'test'], loc='best')
 plt.show()
 
-acceptance_rate, positions_history, energy_history = monte_carlo.MC_loop(params, model)
+#acceptance_rate, positions_history, energy_history = monte_carlo.MC_loop(params, model)
