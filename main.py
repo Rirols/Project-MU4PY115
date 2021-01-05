@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from keras import losses, optimizers, metrics, callbacks
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
-#import monte_carlo
+import monte_carlo
 
 params = {
         'dataset': 'zundel_100k',
@@ -167,4 +167,4 @@ for i in range(len(model.metrics_names)):
     print(line.format(model.metrics_names[i], scores[i]))
 """
 
-#MC_pos, taux = monte_carlo.MC_loop(params, model)
+MC_pos, taux = monte_carlo.MC_loop(params, model)
