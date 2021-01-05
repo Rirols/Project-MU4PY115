@@ -75,9 +75,9 @@ params = {
         ]
     },
     'Monte-Carlo': {
-        'temperature': 1000,
+        'temperature': 100,
         'Number_of_steps': 1000,
-        'box_size': 1,
+        'box_size': 0.5,
     }
 }
 
@@ -201,27 +201,30 @@ plt.show()
 
 acceptance_rate, positions_history, energy_history = monte_carlo.MC_loop(params, model, pcas, scalers)
 
+positions, energies = data.load_pos(dataset=params['dataset'], 
+                                    limit=params['Monte-Carlo']['Number_of_steps'])
+
 print("Comparing Monte Carlo and MD...")
 #Distance entre les deux atomes d'oxygène
 plt.figure()
 plt.title("Histogramme des distances entre les deux atomes d'oxygène")
-#distances_MD = np.linalg.norm(positions[:,0]-positions[:,1],axis=1)
+distances_MD = np.linalg.norm(positions[:,0]-positions[:,1],axis=1)
 distances_MC = np.linalg.norm(positions_history[:,0] - positions_history[:,1],axis=1)
-#plt.hist(distances_MD)
+plt.hist(distances_MD)
 plt.hist(distances_MC, alpha=.8)
 
-#distancesOH_MD = np.linalg.norm(positions[:,0]-positions[:,2],axis=1)
-#distancesOH_MD = np.hstack((distancesOH,np.linalg.norm(positions[:,1]-positions[:,2],axis=1)))
+distancesOH_MD = np.linalg.norm(positions[:,0]-positions[:,2],axis=1)
+distancesOH_MD = np.hstack((distancesOH_MD,np.linalg.norm(positions[:,1]-positions[:,2],axis=1)))
 
 distancesOH_MC = np.linalg.norm(positions_history[:,0]-positions_history[:,2], axis=1)
-#distancesOH_MC = np.hstack((positions_history, 
-            #np.linalg.norm(positions_history[:,1]-positions_history[:,2],axis=1))
-              #  )
+"""distancesOH_MC = np.hstack((positions_history, 
+            np.linalg.norm(positions_history[:,1]-positions_history[:,2],axis=1))
+               )"""
 
 #Distance entre les atomes d'oxygène et le proton
 plt.figure()
 plt.title("Histogramme des distances entre les deux atomes d'oxygène et le proton")
-#plt.hist(distancesOH_MD)
+plt.hist(distancesOH_MD)
 plt.hist(distancesOH_MC,alpha=.8)
 
 #Histogrammes des énergies

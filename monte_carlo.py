@@ -40,7 +40,7 @@ def MC_loop(parameters, model, pcas, scalers):
     for i in range(parameters['Monte-Carlo']['Number_of_steps']):
         
         #Random position
-        try_positions = positions + np.random.random((7,3))*delta-delta/2
+        try_positions = positions + np.random.random((7,3))*2*delta-delta
         
         molecs = np.empty(1, dtype=object)
         molecs[0] = Atoms('O2H5', positions=try_positions)
@@ -65,24 +65,25 @@ def MC_loop(parameters, model, pcas, scalers):
         descriptor = convert_to_inputs(descriptor)
         
         try_energy=model.predict(descriptor)
-    
-        diff_E = energy - parameters['scalers']['energies_scaler'].inverse_transform(try_energy)
+        try_energy=parameters['scalers']['energies_scaler'].inverse_transform(try_energy)
+
+        diff_E = energy - try_energy
         diff_E *= hartree
 
         if diff_E < 0 : 
             energy = try_energy
             positions = try_positions
             acceptance.append(1)
-            print('Yes')
+            #print('Yes_1')
             
         elif np.exp(-beta * diff_E) >= np.random.random():
             energy = try_energy
             positions = try_positions
             acceptance.append(1)
-            print('Yes')
+            #print('Yes_2')
         else:
             acceptance.append(0)
-            print('No')
+            #print('No')
             pass
         
         positions_history[i]=positions
