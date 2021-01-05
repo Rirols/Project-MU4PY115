@@ -30,9 +30,9 @@ datasets = {
 def get_atoms_list(dataset='zundel_100k'):
     return np.copy(datasets[dataset]['list'])
 
-def load(dataset='zundel_100k', limit=None):
+def load_pos(dataset='zundel_100k', limit=None):
     params = datasets[dataset]
-    
+
     pos = pickle.load(open(params['data']['pos'], 'rb'))
     energies = pickle.load(open(params['data']['energies'], 'rb'))
 
@@ -46,6 +46,13 @@ def load(dataset='zundel_100k', limit=None):
     if limit != None:
         pos, energies = pos[:limit], energies[:limit]
 
+    return pos, energies
+
+def load(dataset='zundel_100k', limit=None):
+    params = datasets[dataset]
+
+    pos, energies = load_pos(dataset, limit)
+    
     tot_time = np.shape(pos)[0]
     molecs = np.empty(tot_time, dtype=object)
     for t in range(tot_time):

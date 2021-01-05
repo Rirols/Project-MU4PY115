@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 #Goal: Monte Carlo all at once to test accuracy of NN model
-#Issue: not yet entirely general
 
 import numpy as np
 import data
@@ -18,15 +17,13 @@ def convert_to_inputs(raw):
 
 def MC_loop(parameters, model):
     
+    #set up constants
     delta = parameters['Monte-Carlo']['box_size']
     kb = 1.381e-23*2.294e+17 # conversion Hartree/K# conversion Hartree/K
     beta = 1/(kb*parameters['Monte-Carlo']['temperature'])
     acceptance = 0
     
-    pos_history = np.empty((parameters['Monte-Carlo']['Number_of_steps'],7, 3))
-    energies_history = np.empty(parameters['Monte-Carlo']['Number_of_steps'])
-    
-
+    #load MD data
     all_positions = pickle.load(open('./data/zundel_100K_pos', 'rb'))
     all_energies= pickle.load(open('./data/zundel_100K_energy', 'rb'))
     
@@ -37,17 +34,25 @@ def MC_loop(parameters, model):
     for t in range(tot_time):
         molecs[t] = Atoms('O2H5', positions=all_positions[t])
     
+    #Set up random initial configuration
     init_time = np.random.randint(np.shape(all_positions)[0]-1)
     positions= all_positions[init_time]
     energy = all_energies[init_time + 1]
+    
+    #Set up lists to record evolution
+    positions_history=np.empty((parameters['Monte-Carlo']['Number_of_steps'],7,3))
+    energy_history = np.empty(parameters['Monte-Carlo']['Number_of_steps'])
         
     for i in range(parameters['Monte-Carlo']['Number_of_steps']):
         
         #Random position
         try_positions = positions + np.random.random((7,3))*delta-delta/2
+        print(np.shape(try_positions))
         
         #convert random position into input
-        descriptor = #descriptor of config
+        descriptor = data.compute_desc(molecs, dataset=parameters['dataset'], 
+                    soap_params=parameters['soap'], parallelize=True)
+        
         #PCA + scaling
         
         descriptor = convert_to_inputs(descriptor)
@@ -65,18 +70,17 @@ def MC_loop(parameters, model):
             energy = try_energy
             positions = try_positions
             acceptance += 1
-            pos_history[i] = positions
-            energies_history[i] = energy
             
         elif np.exp(-beta * (diff_E)) >= np.random.random():
             energy = try_energy
             positions = try_positions
-            pos_history[i] = positions
-            energies_history[i] = energy
-            
+            acceptance += 1
         else:
-            pos_history[i] = positions
-            energies_history[i] = energy
+            pass
+        
+        positions_history[i]=positions
+        energy_history[i]=energy
         
     acceptance_rate = acceptance/parameters['Monte-Carlo']['Number_of_steps']
-    return positions, acceptance_rate
+    
+    return acceptance_rate, positions_history, energy_history
