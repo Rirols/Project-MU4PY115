@@ -25,18 +25,15 @@ def MC_loop(parameters, model):
     acceptance = 0
     
     #load MD data
-    all_positions = pickle.load(open('./data/zundel_100K_pos', 'rb'))
-    all_energies= pickle.load(open('./data/zundel_100K_energy', 'rb'))
-    
-    step = 100
-    all_positions, all_energies = all_positions[::step], all_energies[1::step]
-    
+    all_positions, all_energies = data.load_pos(parameters['dataset'], limit=10000)
+
     #Set up random initial configuration
     init_time = np.random.randint(np.shape(all_positions)[0]-1)
     positions= all_positions[init_time]
     energy = all_energies[init_time + 1]
-    print(np.shape(positions))
-    molecs = Atoms('O2H5', positions=positions[1])
+
+    molecs = np.empty(1, dtype=object)
+    molecs[0] = Atoms('O2H5', positions=positions)
     
     #Set up lists to record evolution
     positions_history=np.empty((parameters['Monte-Carlo']['Number_of_steps'],7,3))
@@ -48,9 +45,10 @@ def MC_loop(parameters, model):
         try_positions = positions + np.random.random((7,3))*delta-delta/2
         
         #convert random position into input
-        descriptor = data.compute_desc(molecs, dataset=parameters['dataset'], 
-                    soap_params=parameters['soap'], parallelize=True)
-        
+        descriptor = data.compute_desc(molecs,
+            dataset=parameters['dataset'], 
+            soap_params=parameters['soap'])
+
         #PCA + scaling
         n_dim = model.get_layer(index=0).input_shape[0][1] #dimension of preprocessed input
         pca = PCA(n_components=n_dim)

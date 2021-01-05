@@ -18,7 +18,7 @@ datasets = {
         'data': {
             'pos': join(data_path, 'zundel_100K_pos'),
             'energies': join(data_path, 'zundel_100K_energy'),
-            'thinning_step': 100
+            'thinning_step': 5
         },
         'soap': {
             'species': ['H', 'O'],

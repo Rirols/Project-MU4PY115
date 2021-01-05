@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from keras import losses, optimizers, metrics, callbacks
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
-#import monte_carlo
+import monte_carlo
 
 params = {
     'dataset': 'zundel_100k',
@@ -63,7 +63,7 @@ params = {
                 learning_rate=0.001
                 ),
             'loss': losses.MeanSquaredError(),
-            'metrics': metrics.MeanSquaredError(),
+            'metrics': [metrics.MeanSquaredError(), metrics.MeanAbsoluteError()],
         }
     },
     'fit': {
@@ -91,13 +91,14 @@ validation_size = int(params['validation_set_size_ratio'] * np.shape(descriptors
 
 print('Generating train, validation and test sets...')
 X_train, y_train, X_validation, y_validation, X_test, y_test = preprocessing.generate_scaled_sets(
-        atoms=data.get_atoms_list(params['dataset']),
-        desc=descriptors,
-        energies=energies,
-        ratios=(params['train_set_size_ratio'], params['validation_set_size_ratio']),
-        pca_params=params['pca'],
-        desc_scaler_type=params['scalers']['desc_scaler_type'],
-        energies_scaler=params['scalers']['energies_scaler'])
+    atoms=data.get_atoms_list(params['dataset']),
+    desc=descriptors,
+    energies=energies,
+    ratios=(params['train_set_size_ratio'], params['validation_set_size_ratio']),
+    pca_params=params['pca'],
+    desc_scaler_type=params['scalers']['desc_scaler_type'],
+    energies_scaler=params['scalers']['energies_scaler']
+)
 
 def convert_to_inputs(raw):
     raw_t = raw.transpose(1, 0, 2)
@@ -141,6 +142,7 @@ print(' Scores '.center(max_metrics_name_length + 13, '='))
 line = '{:<%i} : {:.4e}' % max_metrics_name_length
 for i in range(len(model.metrics_names)):
     print(line.format(model.metrics_names[i], scores[i]))
+print()
 
 y_train_pred = model.predict(X_train)
 y_test_pred = model.predict(X_test)
@@ -164,4 +166,4 @@ plt.xlabel('epoch')
 plt.legend(['train', 'test'], loc='best')
 plt.show()
 
-#acceptance_rate, positions_history, energy_history = monte_carlo.MC_loop(params, model)
+acceptance_rate, positions_history, energy_history = monte_carlo.MC_loop(params, model)
