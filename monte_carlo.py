@@ -21,6 +21,7 @@ def MC_loop(parameters, model, pcas, scalers):
     delta = parameters['Monte-Carlo']['box_size']
     kb = 1.381e-23
     beta = 1/(kb*parameters['Monte-Carlo']['temperature'])
+    hartree = 1.602176*27.211297e-19
     acceptance = []
     
     #load MD data
@@ -30,9 +31,6 @@ def MC_loop(parameters, model, pcas, scalers):
     init_time = np.random.randint(np.shape(all_positions)[0]-1)
     positions= all_positions[init_time]
     energy = all_energies[init_time + 1]
-
-    molecs = np.empty(1, dtype=object)
-    molecs[0] = Atoms('O2H5', positions=positions)
     
     #Set up lists to record evolution
     positions_history=np.empty((parameters['Monte-Carlo']['Number_of_steps'],7,3))
@@ -43,6 +41,9 @@ def MC_loop(parameters, model, pcas, scalers):
         
         #Random position
         try_positions = positions + np.random.random((7,3))*delta-delta/2
+        
+        molecs = np.empty(1, dtype=object)
+        molecs[0] = Atoms('O2H5', positions=try_positions)
         
         #convert random position into input
         descriptor = data.compute_desc(molecs,
@@ -66,20 +67,22 @@ def MC_loop(parameters, model, pcas, scalers):
         try_energy=model.predict(descriptor)
     
         diff_E = energy - parameters['scalers']['energies_scaler'].inverse_transform(try_energy)
-        #diff_E *= 4.35974434e-18 #conversion Hartree => J
-        
+        diff_E *= hartree
+
         if diff_E < 0 : 
             energy = try_energy
             positions = try_positions
             acceptance.append(1)
+            print('Yes')
             
         elif np.exp(-beta * diff_E) >= np.random.random():
             energy = try_energy
             positions = try_positions
             acceptance.append(1)
-            
+            print('Yes')
         else:
             acceptance.append(0)
+            print('No')
             pass
         
         positions_history[i]=positions
