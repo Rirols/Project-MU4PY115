@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 #Goal: Monte Carlo all at once to test accuracy of NN model
+#Issue: not yet entirely general
 
 import numpy as np
 import data
@@ -22,6 +23,9 @@ def MC_loop(parameters, model):
     beta = 1/(kb*parameters['Monte-Carlo']['temperature'])
     acceptance = 0
     
+    pos_history = np.empty((parameters['Monte-Carlo']['Number_of_steps'],7, 3))
+    energies_history = np.empty(parameters['Monte-Carlo']['Number_of_steps'])
+    
 
     all_positions = pickle.load(open('./data/zundel_100K_pos', 'rb'))
     all_energies= pickle.load(open('./data/zundel_100K_energy', 'rb'))
@@ -41,12 +45,9 @@ def MC_loop(parameters, model):
         
         #Random position
         try_positions = positions + np.random.random((7,3))*delta-delta/2
-        print(np.shape(try_positions))
         
         #convert random position into input
-        descriptor = data.compute_desc(molecs, dataset=parameters['dataset'], 
-                    soap_params=parameters['soap'], parallelize=True)
-        
+        descriptor = #descriptor of config
         #PCA + scaling
         
         descriptor = convert_to_inputs(descriptor)
@@ -64,12 +65,18 @@ def MC_loop(parameters, model):
             energy = try_energy
             positions = try_positions
             acceptance += 1
+            pos_history[i] = positions
+            energies_history[i] = energy
             
         elif np.exp(-beta * (diff_E)) >= np.random.random():
             energy = try_energy
             positions = try_positions
+            pos_history[i] = positions
+            energies_history[i] = energy
+            
         else:
-            pass
+            pos_history[i] = positions
+            energies_history[i] = energy
         
     acceptance_rate = acceptance/parameters['Monte-Carlo']['Number_of_steps']
     return positions, acceptance_rate
