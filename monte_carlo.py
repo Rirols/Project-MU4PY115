@@ -5,9 +5,8 @@
 
 import numpy as np
 import data
-import pickle
 from ase import Atoms
-from sklearn.decomposition import PCA
+import preprocessing
 
 def convert_to_inputs(raw):
     raw_t = raw.transpose(1, 0, 2)
@@ -16,7 +15,7 @@ def convert_to_inputs(raw):
         X.append(raw_t[i])
     return X
 
-def MC_loop(parameters, model):
+def MC_loop(parameters, model, pcas, scalers):
     
     #set up constants
     delta = parameters['Monte-Carlo']['box_size']
@@ -50,12 +49,17 @@ def MC_loop(parameters, model):
             soap_params=parameters['soap'])
 
         #PCA + scaling
-        n_dim = model.get_layer(index=0).input_shape[0][1] #dimension of preprocessed input
-        pca = PCA(n_components=n_dim)
-        print(np.shape(descriptor))
-        descriptor=pca.fit(descriptor)
-        descriptor=parameters['scalers']['desc_scaler_type'].transform(descriptor)
+        descriptor = preprocessing.transform_set(
+            atoms=data.get_atoms_list(parameters['dataset']),
+            descriptors=descriptor,
+            transformers=pcas
+            )
         
+        descriptor = preprocessing.transform_set(
+            atoms=data.get_atoms_list(parameters['dataset']),
+            descriptors=descriptor,
+            transformers=scalers
+            )
         descriptor = convert_to_inputs(descriptor)
         
         try_energy=model.predict(descriptor)
