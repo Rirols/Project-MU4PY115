@@ -14,14 +14,16 @@ import monte_carlo
 
 params = {
     'dataset': 'zundel_100k',
-    'dataset_size_limit': 100000,
+    'dataset_size_limit': 10000,
     'soap': {
         # https://singroup.github.io/dscribe/latest/tutorials/soap.html
-        'sigma': 1, #initial: 0.01
-        'nmax': 5,  #3
-        'lmax': 2,  #3
-        'rcut': 9   #7
+        'sigma': 1,
+        'nmax': 5,
+        'lmax': 2,
+        'rcut': 9
     },
+    'train_set_size_ratio': 0.6,
+    'validation_set_size_ratio': 0.2,
     'pca': {
         # https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html
         'variance': 0.999999
@@ -31,8 +33,6 @@ params = {
         'desc_scaler_type': StandardScaler,
         'energies_scaler': MinMaxScaler()
     },
-    'train_set_size_ratio': 0.6,
-    'validation_set_size_ratio': 0.2,
     'submodel': {
         # https://keras.io/guides/sequential_model/
         'hidden_layers': {
@@ -136,7 +136,7 @@ X_test = convert_to_inputs(X_test)
 # Create model and train it
 print('Creating neural network...')
 model = NN.create(
-    atoms=data.get_atoms_list(params['dataset']),
+    atoms=atoms,
     desc_length=np.shape(X_train[0])[1],
     comp_params=params['model']['compilation'],
     sub_hidden_layers_params=params['submodel']['hidden_layers'],
@@ -174,7 +174,6 @@ y_test = params['scalers']['energies_scaler'].inverse_transform(y_test)
 y_train_pred = params['scalers']['energies_scaler'].inverse_transform(y_train_pred)
 y_test_pred = params['scalers']['energies_scaler'].inverse_transform(y_test_pred)
 
-
 plt.plot(y_train, y_train_pred, '+')
 plt.plot(y_train, y_train)
 plt.axis('square')
@@ -184,7 +183,6 @@ plt.legend(['train'], loc='best')
 plt.show()
 
 plt.plot(y_test, y_test_pred, '+')
-#plt.plot(y_train, y_train_pred, '+')
 plt.plot(y_test, y_test)
 plt.axis('square')
 plt.xlabel('True value of energy (test set) (Hartree)')
@@ -199,27 +197,41 @@ plt.xlabel('epoch')
 plt.legend(['train', 'test'], loc='best')
 plt.show()
 
+# Monte-Carlo simulation
 positions_history, energy_history = monte_carlo.MC_loop(params, model, pcas, scalers)
 
+<<<<<<< HEAD
 positions, energies = data.load_pos(dataset=params['dataset'], 
                                     limit=params['Monte-Carlo']['Number_of_steps'])
+=======
+print('Comparing Monte Carlo and MD...')
+>>>>>>> 53b142cd24e5bf2af06221608956ef12f9901762
 
-print("Comparing Monte Carlo and MD...")
-#Distance entre les deux atomes d'oxygène
-distances_MD = np.linalg.norm(positions[:,0] - positions[:,1],axis=1)
-distances_MC = np.linalg.norm(positions_history[:,0] - positions_history[:,1],axis=1)
+positions, energies = data.load_pos(
+    dataset=params['dataset'], limit=None)
+
+# Distance entre les deux atomes d'oxygène
+distances_MD = np.linalg.norm(positions[:,0] - positions[:,1], axis=1)
+distances_MC = np.linalg.norm(positions_history[:,0] - positions_history[:,1], axis=1)
 
 print(np.shape(distances_MD))
 print(np.shape(distances_MC))
 
 plt.figure()
+<<<<<<< HEAD
 plt.title("Histogramme des distances entre les deux atomes d'oxygène (Ångström)")
 plt.hist(distances_MD, alpha=0.5, label="Résultats dynamique moléculaire")
 plt.hist(distances_MC, alpha=0.5, label="Résultats Monte-Carlo")
+=======
+plt.title('Histogramme des distances entre les deux atomes d\'oxygène')
+plt.hist(distances_MD, alpha=0.5, label='Résultats dynamique moléculaire')
+plt.hist(distances_MC, alpha=0.5, label='Résultats Monte-Carlo')
+>>>>>>> 53b142cd24e5bf2af06221608956ef12f9901762
 plt.legend()
+plt.show()
 
-#Distance entre les atomes d'oxygène et le proton
-distancesOH_MD_1 = np.linalg.norm(positions[:,0] - positions[:,2],axis=1)
+# Distance entre les atomes d'oxygène et le proton
+distancesOH_MD_1 = np.linalg.norm(positions[:,0] - positions[:,2], axis=1)
 distancesOH_MD_2 = np.linalg.norm(positions[:,1] - positions[:,2], axis=1)
 distancesOH_MD = np.hstack((distancesOH_MD_1, distancesOH_MD_2))
 
@@ -228,15 +240,26 @@ distancesOH_MC_2 = np.linalg.norm(positions_history[:,1] - positions_history[:,2
 distancesOH_MC = np.hstack((distancesOH_MC_1, distancesOH_MC_2))
 
 plt.figure()
+<<<<<<< HEAD
 plt.title("Histogramme des distances entre les atomes d'oxygène et le proton (Ångström)")
 plt.hist(distancesOH_MD, alpha=0.5, label="Résultats dynamique moléculaire")
 plt.hist(distancesOH_MC, alpha=0.5, label="Résultats Monte-Carlo")
+=======
+plt.title('Histogramme des distances entre les deux atomes d\'oxygène et le proton')
+plt.hist(distancesOH_MD, alpha=0.5, label='Résultats dynamique moléculaire')
+plt.hist(distancesOH_MC, alpha=0.5, label='Résultats Monte-Carlo')
+>>>>>>> 53b142cd24e5bf2af06221608956ef12f9901762
 plt.legend()
+plt.show()
 
-#Histogrammes des énergies
-
+# Histogrammes des énergies
 plt.figure()
+<<<<<<< HEAD
 plt.title("Histogramme des énergies (Hartree)")
+=======
+plt.title('Histogramme des énergies')
+>>>>>>> 53b142cd24e5bf2af06221608956ef12f9901762
 plt.hist(energies, alpha=0.5, label='Énergies dynamique moléculaire')
 plt.hist(energy_history, alpha=0.5, label='Énergies Monte-Carlo')
 plt.legend()
+plt.show()

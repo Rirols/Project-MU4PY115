@@ -3,7 +3,6 @@
 import numpy as np
 from collections import Counter
 from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
 
 def iterate(atoms, descriptors, func, args):
     """
