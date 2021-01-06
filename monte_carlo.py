@@ -22,11 +22,12 @@ def MC_loop(parameters, model, pcas, scalers):
     print('Preparing Monte-Carlo simulation...')
 
     # Set up constants
+    hartree = 4.3597443419e-18
     delta = parameters['Monte-Carlo']['box_size']
     kb = 1.381e-23
+    kb = kb/hartree
     beta = 1/(kb*parameters['Monte-Carlo']['temperature'])
     #hartree = 1.602176*27.211297e-19
-    hartree = 4.3597443419e-18
     acceptance = []
     
     # Load MD data
@@ -49,9 +50,9 @@ def MC_loop(parameters, model, pcas, scalers):
     
     for i in tqdm(range(parameters['Monte-Carlo']['Number_of_steps'])):
         #Random position
-        positions = np.copy(positions)
-        try_positions = positions + np.random.random((7,3))*2*delta - delta
-        
+        positions_MC = np.copy(positions)
+        try_positions = positions_MC + np.random.random((7,3))*2*delta - delta
+
         molecs = np.empty(1, dtype=object)
         molecs[0] = Atoms('O2H5', positions=try_positions)
         
@@ -86,23 +87,25 @@ def MC_loop(parameters, model, pcas, scalers):
         #diff_E *= hartree
 
         if diff_E < 0 : 
-            energy = try_energy
-            positions = try_positions
+            energy = np.copy(try_energy)
+            positions_MC = np.copy(try_positions)
             acceptance.append(1)
             #print('Yes_1'): check if works
             
-        elif np.exp(-beta * diff_E * hartree) >= np.random.random():
-            energy = try_energy
-            positions = try_positions
+        elif np.exp(-beta * diff_E) >= np.random.random():
+            energy = np.copy(try_energy)
+            positions_MC = np.copy(try_positions)
             acceptance.append(1)
             #print('Yes_2')
         else:
+            energy = energy_history[i-1]
+            positions_MC = positions_history[i-1]
             acceptance.append(0)
             #print('No')
             #pass
         
-        positions_history[i]=positions
-        energy_history[i]=energy
+        positions_history[i]= positions_MC
+        energy_history[i] = energy
         #ase.io.write('positions.xyz',molecs,append=True)
         
     plt.plot(n_ité, try_list)

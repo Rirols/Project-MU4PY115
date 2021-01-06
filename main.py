@@ -77,7 +77,7 @@ params = {
     'Monte-Carlo': {
         'temperature': 100,
         'Number_of_steps': 10000,
-        'box_size': 0.05,
+        'box_size': 0.03 ,
     }
 }
 
