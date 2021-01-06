@@ -14,14 +14,16 @@ import monte_carlo
 
 params = {
     'dataset': 'zundel_100k',
-    'dataset_size_limit': 100000,
+    'dataset_size_limit': 10000,
     'soap': {
         # https://singroup.github.io/dscribe/latest/tutorials/soap.html
-        'sigma': 1, #initial: 0.01
-        'nmax': 5,  #3
-        'lmax': 2,  #3
-        'rcut': 9   #7
+        'sigma': 1,
+        'nmax': 5,
+        'lmax': 2,
+        'rcut': 9
     },
+    'train_set_size_ratio': 0.6,
+    'validation_set_size_ratio': 0.2,
     'pca': {
         # https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html
         'variance': 0.999999
@@ -31,8 +33,6 @@ params = {
         'desc_scaler_type': StandardScaler,
         'energies_scaler': MinMaxScaler()
     },
-    'train_set_size_ratio': 0.6,
-    'validation_set_size_ratio': 0.2,
     'submodel': {
         # https://keras.io/guides/sequential_model/
         'hidden_layers': {
@@ -136,7 +136,7 @@ X_test = convert_to_inputs(X_test)
 # Create model and train it
 print('Creating neural network...')
 model = NN.create(
-    atoms=data.get_atoms_list(params['dataset']),
+    atoms=atoms,
     desc_length=np.shape(X_train[0])[1],
     comp_params=params['model']['compilation'],
     sub_hidden_layers_params=params['submodel']['hidden_layers'],
@@ -201,8 +201,8 @@ plt.show()
 
 positions_history, energy_history = monte_carlo.MC_loop(params, model, pcas, scalers)
 
-positions, energies = data.load_pos(dataset=params['dataset'], 
-                                    limit=None)
+positions, energies = data.load_pos(
+    dataset=params['dataset'], limit=None)
 
 print("Comparing Monte Carlo and MD...")
 #Distance entre les deux atomes d'oxygène
