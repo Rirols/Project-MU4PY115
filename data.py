@@ -18,7 +18,7 @@ datasets = {
         'data': {
             'pos': join(data_path, 'zundel_100K_pos'),
             'energies': join(data_path, 'zundel_100K_energy'),
-            'thinning_step': 5
+            'thinning_step': 100
         },
         'soap': {
             'species': ['H', 'O'],
@@ -40,8 +40,8 @@ def load_pos(dataset='zundel_100k', limit=None):
         pos = pos[:-1]
         energies = energies[1:]
 
-    step = params['data']['thinning_step']
-    pos, energies = pos[::step], energies[::step]
+    #step = params['data']['thinning_step']
+    #pos, energies = pos[::step], energies[::step]
 
     if limit != None:
         pos, energies = pos[:limit], energies[:limit]

@@ -8,6 +8,7 @@ import data
 from ase import Atoms
 import preprocessing
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 #import ase.io
 
 def convert_to_inputs(raw):
@@ -40,6 +41,9 @@ def MC_loop(parameters, model, pcas, scalers):
     acceptance = []
     positions_history = np.empty((parameters['Monte-Carlo']['Number_of_steps'],7,3))
     energy_history = np.empty(parameters['Monte-Carlo']['Number_of_steps'])
+    
+    n_ité=[]
+    try_list=[]
     
     print("Computing Monte-Carlo simulation...(this might take a while)")
     
@@ -74,7 +78,10 @@ def MC_loop(parameters, model, pcas, scalers):
         
         try_energy = model.predict(descriptor)
         try_energy = parameters['scalers']['energies_scaler'].inverse_transform(try_energy)
-
+        
+        n_ité.append(i)
+        try_list.append(try_energy[0][0])
+        
         diff_E = energy - try_energy
         #diff_E *= hartree
 
@@ -98,9 +105,12 @@ def MC_loop(parameters, model, pcas, scalers):
         energy_history[i]=energy
         #ase.io.write('positions.xyz',molecs,append=True)
         
+    plt.plot(n_ité, try_list)
+    plt.xlabel('Itération')
+    plt.ylabel('Predicted energy (Hartree)')
+    plt.show()
+    
     print("acceptance rate=", np.mean(acceptance))
-    print("mean MC position =", np.mean(positions_history))
-    print("initial MC position =", np.mean(all_positions[init_time]))
-
+    
     return positions_history, energy_history
 

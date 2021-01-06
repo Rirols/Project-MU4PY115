@@ -76,8 +76,8 @@ params = {
     },
     'Monte-Carlo': {
         'temperature': 100,
-        'Number_of_steps': 1000,
-        'box_size': 0.6,
+        'Number_of_steps': 10000,
+        'box_size': 0.05,
     }
 }
 
@@ -208,9 +208,6 @@ print('Comparing Monte Carlo and MD...')
 # Distance entre les deux atomes d'oxygène
 distances_MD = np.linalg.norm(positions[:,0] - positions[:,1], axis=1)
 distances_MC = np.linalg.norm(positions_history[:,0] - positions_history[:,1], axis=1)
-
-print(np.shape(distances_MD))
-print(np.shape(distances_MC))
 
 plt.figure()
 plt.title("Histogramme des distances entre les deux atomes d'oxygène (Ångström)")
