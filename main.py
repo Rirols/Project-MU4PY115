@@ -14,7 +14,7 @@ import monte_carlo
 
 params = {
     'dataset': 'zundel_100k',
-    'dataset_size_limit': 10000,
+    'dataset_size_limit': 100000,
     'soap': {
         # https://singroup.github.io/dscribe/latest/tutorials/soap.html
         'sigma': 1,
@@ -200,10 +200,12 @@ plt.show()
 # Monte-Carlo simulation
 positions_history, energy_history = monte_carlo.MC_loop(params, model, pcas, scalers)
 
-positions, energies = data.load_pos(dataset=params['dataset'], 
-                                    limit=params['Monte-Carlo']['Number_of_steps'])
-
 print('Comparing Monte Carlo and MD...')
+
+positions, energies = data.load_pos(
+    dataset=params['dataset'], 
+    limit=params['Monte-Carlo']['Number_of_steps']
+)
 
 # Distance entre les deux atomes d'oxygène
 distances_MD = np.linalg.norm(positions[:,0] - positions[:,1], axis=1)

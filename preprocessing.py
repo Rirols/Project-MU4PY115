@@ -69,11 +69,15 @@ def generate_pca_transformers(atoms, train_desc, pca_params):
     
 def transform_set(atoms, descriptors, transformers):
     def func(n_config, n_dim, n_elts, n_sub_elts, subdesc, indexes, sub_elts_id, args):
-        args['result'][:, indexes] = np.reshape(
-            args['transformers'][sub_elts_id].transform(
-                subdesc.reshape((n_config * n_sub_elts, n_dim))),
-            (n_config, n_sub_elts, np.shape(args['result'])[2])
-        )
+        for i in range(n_sub_elts):
+            args['result'][:, indexes[i]] = args['transformers'][sub_elts_id].transform(
+                subdesc[:, i]
+            )
+        #args['result'][:, indexes] = np.reshape(
+        #    args['transformers'][sub_elts_id].transform(
+        #        subdesc.reshape((n_config * n_sub_elts, n_dim))),
+        #    (n_config, n_sub_elts, np.shape(args['result'])[2])
+        #)
 
     shape = np.shape(descriptors)
     if (type(transformers[0]) is PCA):
@@ -86,10 +90,7 @@ def transform_set(atoms, descriptors, transformers):
     return result
 
 def transform_sets(atoms, sets, transformers):
-    result = []
-    for i in range(len(sets)):
-        result.append(transform_set(atoms, sets[i], transformers))
-    return result
+    return [transform_set(atoms, sets[i], transformers) for i in range(len(sets))]
 
 def scale_energies(sets, scaler):
     transforms = [scaler.transform] * (len(sets) - 1)
