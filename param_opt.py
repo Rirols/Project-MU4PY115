@@ -121,8 +121,8 @@ def objective(target):
     descriptors, energies = data.load_and_compute(
         dataset=params['dataset'], soap_params=params['soap'], limit=params['dataset_size_limit'])
 
-    train_size = int(params['train_set_size_ratio'] * np.shape(descriptors)[0])
-    validation_size = int(params['validation_set_size_ratio'] * np.shape(descriptors)[0])
+    #train_size = int(params['train_set_size_ratio'] * np.shape(descriptors)[0])
+    #validation_size = int(params['validation_set_size_ratio'] * np.shape(descriptors)[0])
 
     X_train, y_train, X_validation, y_validation, X_test, y_test = preprocessing.generate_scaled_sets(
             atoms=data.get_atoms_list(params['dataset']),
