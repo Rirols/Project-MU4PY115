@@ -77,7 +77,7 @@ params = {
     'Monte-Carlo': {
         'temperature': 100,
         'Number_of_steps': 1000,
-        'box_size': 0.1,
+        'box_size': 0.6,
     }
 }
 
@@ -200,15 +200,10 @@ plt.show()
 # Monte-Carlo simulation
 positions_history, energy_history = monte_carlo.MC_loop(params, model, pcas, scalers)
 
-<<<<<<< HEAD
 positions, energies = data.load_pos(dataset=params['dataset'], 
                                     limit=params['Monte-Carlo']['Number_of_steps'])
-=======
-print('Comparing Monte Carlo and MD...')
->>>>>>> 53b142cd24e5bf2af06221608956ef12f9901762
 
-positions, energies = data.load_pos(
-    dataset=params['dataset'], limit=None)
+print('Comparing Monte Carlo and MD...')
 
 # Distance entre les deux atomes d'oxygène
 distances_MD = np.linalg.norm(positions[:,0] - positions[:,1], axis=1)
@@ -218,15 +213,9 @@ print(np.shape(distances_MD))
 print(np.shape(distances_MC))
 
 plt.figure()
-<<<<<<< HEAD
 plt.title("Histogramme des distances entre les deux atomes d'oxygène (Ångström)")
 plt.hist(distances_MD, alpha=0.5, label="Résultats dynamique moléculaire")
 plt.hist(distances_MC, alpha=0.5, label="Résultats Monte-Carlo")
-=======
-plt.title('Histogramme des distances entre les deux atomes d\'oxygène')
-plt.hist(distances_MD, alpha=0.5, label='Résultats dynamique moléculaire')
-plt.hist(distances_MC, alpha=0.5, label='Résultats Monte-Carlo')
->>>>>>> 53b142cd24e5bf2af06221608956ef12f9901762
 plt.legend()
 plt.show()
 
@@ -240,25 +229,15 @@ distancesOH_MC_2 = np.linalg.norm(positions_history[:,1] - positions_history[:,2
 distancesOH_MC = np.hstack((distancesOH_MC_1, distancesOH_MC_2))
 
 plt.figure()
-<<<<<<< HEAD
 plt.title("Histogramme des distances entre les atomes d'oxygène et le proton (Ångström)")
 plt.hist(distancesOH_MD, alpha=0.5, label="Résultats dynamique moléculaire")
 plt.hist(distancesOH_MC, alpha=0.5, label="Résultats Monte-Carlo")
-=======
-plt.title('Histogramme des distances entre les deux atomes d\'oxygène et le proton')
-plt.hist(distancesOH_MD, alpha=0.5, label='Résultats dynamique moléculaire')
-plt.hist(distancesOH_MC, alpha=0.5, label='Résultats Monte-Carlo')
->>>>>>> 53b142cd24e5bf2af06221608956ef12f9901762
 plt.legend()
 plt.show()
 
 # Histogrammes des énergies
 plt.figure()
-<<<<<<< HEAD
 plt.title("Histogramme des énergies (Hartree)")
-=======
-plt.title('Histogramme des énergies')
->>>>>>> 53b142cd24e5bf2af06221608956ef12f9901762
 plt.hist(energies, alpha=0.5, label='Énergies dynamique moléculaire')
 plt.hist(energy_history, alpha=0.5, label='Énergies Monte-Carlo')
 plt.legend()
