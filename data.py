@@ -6,6 +6,7 @@ import multiprocessing
 import pickle
 import numpy as np
 from ase import Atoms
+from ase.build import bulk
 from dscribe.descriptors import SOAP
 
 def load_pickle(dataset, args):
@@ -51,6 +52,7 @@ datasets = {
         'atoms': 7,
         'symbols': 'O2H5',
         'list': np.array([0, 0, 1, 1, 1, 1, 1]),
+        'ase': {},
         'soap': {
             'species': ['H', 'O'],
             'periodic': False
@@ -72,10 +74,12 @@ datasets = {
         'atoms': 96,
         'symbols': 'C32O64',
         'list': np.array([0]*32 + [1]*64),
+        'ase': {
+            'cell': [9.8] * 3
+        },
         'soap': {
             'species': ['C', 'O'],
-            'periodic': False,
-            'sparse': False
+            'periodic': True
         }
     }
 }
@@ -109,7 +113,7 @@ def load(dataset='zundel_100k', limit=None):
     tot_time = np.shape(pos)[0]
     molecs = np.empty(tot_time, dtype=object)
     for t in range(tot_time):
-        molecs[t] = Atoms(params['symbols'], positions=pos[t])
+        molecs[t] = Atoms(params['symbols'], positions=pos[t], **params['ase'])
 
     return molecs, energies
 
