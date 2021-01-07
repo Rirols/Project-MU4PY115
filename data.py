@@ -8,21 +8,74 @@ import numpy as np
 from ase import Atoms
 from dscribe.descriptors import SOAP
 
+def load_pickle(dataset, args):
+    pos = pickle.load(open(args['data']['pos'], 'rb'))
+    energies = pickle.load(open(args['data']['energies'], 'rb'))
+
+    if (dataset == 'zundel_100k'):
+        pos = pos[:-1]
+        energies = energies[1:]
+
+    step = args['thinning_step']
+    pos, energies = pos[::step], energies[::step]
+
+    return pos, energies
+
+def load_txt(dataset, args):
+    pos = np.loadtxt(args['data']['pos'], unpack=False)
+    energies = np.loadtxt(args['data']['energies'], unpack=True)
+
+    energies = energies[args['en_column']]
+    n_config = np.shape(energies)[0]
+    pos = np.reshape(pos, (n_config, args['atoms'], 3))
+
+    step = args['thinning_step']
+    pos, energies = pos[::step], energies[::step]
+
+    return pos, energies
+
 data_path='data'
 
 datasets = {
     'zundel_100k': {
+        'loading': {
+            'func': load_pickle,
+            'args': {
+                'data': {
+                    'pos': join(data_path, 'zundel_100K_pos'),
+                    'energies': join(data_path, 'zundel_100K_energy')
+                },
+                'thinning_step': 5,
+            }
+        },
         'atoms': 7,
         'symbols': 'O2H5',
         'list': np.array([0, 0, 1, 1, 1, 1, 1]),
-        'data': {
-            'pos': join(data_path, 'zundel_100K_pos'),
-            'energies': join(data_path, 'zundel_100K_energy'),
-            'thinning_step': 5
-        },
         'soap': {
             'species': ['H', 'O'],
             'periodic': False
+        }
+    },
+    'CO2': {
+        'loading': {
+            'func': load_txt,
+            'args': {
+                'data': {
+                    'pos': join(data_path, 'TRAJEC_db'),
+                    'energies': join(data_path, 'ENERGIES_db')
+                },
+                'thinning_step': 1,
+                'en_column': 3,
+                'atoms': 96
+            }
+        },
+        'atoms': 96,
+        'symbols': 'C32O64',
+        'list': np.array([0]*32 + [1]*64),
+        'soap': {
+            'species': ['C', 'O'],
+            'periodic': False,
+            'sparse': False
         }
     }
 }
@@ -39,15 +92,9 @@ def get_n_atoms(dataset='zundel_100k'):
 def load_pos(dataset='zundel_100k', limit=None):
     params = datasets[dataset]
 
-    pos = pickle.load(open(params['data']['pos'], 'rb'))
-    energies = pickle.load(open(params['data']['energies'], 'rb'))
-
-    if (dataset == 'zundel_100k'):
-        pos = pos[:-1]
-        energies = energies[1:]
-
-    step = params['data']['thinning_step']
-    pos, energies = pos[::step], energies[::step]
+    pos, energies = params['loading']['func'](
+        dataset, params['loading']['args']
+    )
 
     if limit != None:
         pos, energies = pos[:limit], energies[:limit]

@@ -72,11 +72,6 @@ def transform_set(atoms, descriptors, transformers):
             args['result'][:, indexes[i]] = args['transformers'][sub_elts_id].transform(
                 subdesc[:, i]
             )
-        #args['result'][:, indexes] = np.reshape(
-        #    args['transformers'][sub_elts_id].transform(
-        #        subdesc.reshape((n_config * n_sub_elts, n_dim))),
-        #    (n_config, n_sub_elts, np.shape(args['result'])[2])
-        #)
 
     shape = np.shape(descriptors)
     if (type(transformers[0]) is PCA):

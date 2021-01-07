@@ -75,7 +75,7 @@ params = {
     },
     'Monte-Carlo': {
         'temperature': 100,
-        'Number_of_steps': 1000,
+        'Number_of_steps': 100000,
         'box_size': 0.02
     }
 }
@@ -166,7 +166,6 @@ y_test = params['scalers']['energies_scaler'].inverse_transform(y_test)
 y_train_pred = params['scalers']['energies_scaler'].inverse_transform(y_train_pred)
 y_test_pred = params['scalers']['energies_scaler'].inverse_transform(y_test_pred)
 
-"""
 plt.plot(y_train, y_train_pred, '+')
 plt.plot(y_train, y_train)
 plt.axis('square')
@@ -189,7 +188,6 @@ plt.ylabel('model loss')
 plt.xlabel('epoch')
 plt.legend(['train', 'test'], loc='best')
 plt.show()
-"""
 
 import MC
 from random import randint
