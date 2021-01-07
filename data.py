@@ -30,6 +30,12 @@ datasets = {
 def get_atoms_list(dataset='zundel_100k'):
     return np.copy(datasets[dataset]['list'])
 
+def get_symbols(dataset='zundel_100k'):
+    return datasets[dataset]['symbols']
+
+def get_n_atoms(dataset='zundel_100k'):
+    return datasets[dataset]['atoms']
+
 def load_pos(dataset='zundel_100k', limit=None):
     params = datasets[dataset]
 

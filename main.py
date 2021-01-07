@@ -10,11 +10,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from keras import losses, optimizers, metrics, callbacks
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
-import monte_carlo
 
 params = {
     'dataset': 'zundel_100k',
-    'dataset_size_limit': 100000,
+    'dataset_size_limit': 10000,
     'soap': {
         # https://singroup.github.io/dscribe/latest/tutorials/soap.html
         'sigma': 1,
@@ -76,8 +75,8 @@ params = {
     },
     'Monte-Carlo': {
         'temperature': 100,
-        'Number_of_steps': 10000,
-        'box_size': 0.03 ,
+        'Number_of_steps': 1000,
+        'box_size': 0.02
     }
 }
 
@@ -122,16 +121,9 @@ y_train, y_validation, y_test = preprocessing.scale_energies(
 )
 
 # Format data
-def convert_to_inputs(raw):
-    raw_t = raw.transpose(1, 0, 2)
-    X = []
-    for i in range(np.shape(raw_t)[0]):
-        X.append(raw_t[i])
-    return X
-
-X_train = convert_to_inputs(X_train)
-X_validation = convert_to_inputs(X_validation)
-X_test = convert_to_inputs(X_test)
+X_train = preprocessing.convert_to_inputs(X_train)
+X_validation = preprocessing.convert_to_inputs(X_validation)
+X_test = preprocessing.convert_to_inputs(X_test)
 
 # Create model and train it
 print('Creating neural network...')
@@ -174,6 +166,7 @@ y_test = params['scalers']['energies_scaler'].inverse_transform(y_test)
 y_train_pred = params['scalers']['energies_scaler'].inverse_transform(y_train_pred)
 y_test_pred = params['scalers']['energies_scaler'].inverse_transform(y_test_pred)
 
+"""
 plt.plot(y_train, y_train_pred, '+')
 plt.plot(y_train, y_train)
 plt.axis('square')
@@ -196,16 +189,38 @@ plt.ylabel('model loss')
 plt.xlabel('epoch')
 plt.legend(['train', 'test'], loc='best')
 plt.show()
+"""
 
-# Monte-Carlo simulation
-positions_history, energy_history = monte_carlo.MC_loop(params, model, pcas, scalers)
+import MC
+from random import randint
 
-print('Comparing Monte Carlo and MD...')
+print('Computing Monte-Carlo simulation (this might take a while)...')
+
+steps = params['Monte-Carlo']['Number_of_steps']
 
 positions, energies = data.load_pos(
-    dataset=params['dataset'], 
-    limit=params['Monte-Carlo']['Number_of_steps']
+    dataset=params['dataset'], limit=steps
 )
+
+random_int = randint(0, steps - 1)
+
+positions_history, energy_history, acceptance_rate = MC.simulate(
+    init_pos = positions[random_int],
+    init_en = energies[random_int],
+    model=model,
+    pcas=pcas,
+    desc_scalers=scalers,
+    en_scaler=params['scalers']['energies_scaler'],
+    soap=params['soap'],
+    steps=steps,
+    delta=params['Monte-Carlo']['box_size'],
+    T=params['Monte-Carlo']['temperature'],
+    dataset=params['dataset']
+)
+
+print('Acceptance Rate :', acceptance_rate)
+
+print('Comparing Monte Carlo and MD...')
 
 # Distance entre les deux atomes d'oxygène
 distances_MD = np.linalg.norm(positions[:,0] - positions[:,1], axis=1)

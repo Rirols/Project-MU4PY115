@@ -110,3 +110,7 @@ def generate_sets(desc, energies, ratios):
     y_test = y_test.reshape(-1, 1)
 
     return X_train, y_train, X_validation, y_validation, X_test, y_test
+
+def convert_to_inputs(desc):
+    desc_t = desc.transpose(1, 0, 2)
+    return [desc_t[i] for i in range(np.shape(desc_t)[0])]
